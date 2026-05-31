@@ -16,25 +16,17 @@ window.state = {
         active_penalties: [],
     },
     personnel: {
-        lucius: {
-            role: "ARCHITECT",
-            tech: 2,
-            cha: 2,
-            log: 2,
-            per: 2,
-        },
-        sarah: { morale: 100, tech: 4, cha: 1, log: 2, per: 4 },
-        leo: { morale: 100, tech: 2, cha: 3, log: 3, per: 1 },
-        synergy: {
-            leo_and_sarah: 0
-        }
+        lucius: { role: "ARCHITECT", tech: 0, cha: 0, log: 0, per: 0 },
+        sarah: { morale: 100, tech: 2, cha: -1, log: 0, per: 2 },
+        leo: { morale: 100, tech: 1, cha: 1, log: 1, per: -1 },
+        synergy: { sarah_and_leo: 0 }
     },
     storybook_images: {},
     chronicle: [],
     history: []
 };
-window.stats = { tech: 2, cha: 2, log: 2, per: 2 };
-window.pointPool = 4;
+window.stats = { tech: 0, cha: 0, log: 0, per: 0 };
+window.pointPool = 2;
 
 // Directory API local states
 window.dirHandle = null;
@@ -116,11 +108,20 @@ window.triggerToast = function(title, message) {
     setTimeout(() => box.classList.remove("active"), 4000);
 };
 
+// Hardened PbtA 2-Point Initialization & Boundary Caps
+let attributePool = 2;
+function validateCreation(tech, cha, log, per) {
+    const stats = [tech, cha, log, per];
+    const sum = stats.reduce((a, b) => a + b, 0);
+    const boundsCheck = stats.every(val => val >= -1 && val <= 2);
+    return sum === 2 && boundsCheck;
+}
+
 window.adjustStat = function(stat, delta) {
-    if (delta > 0 && window.pointPool > 0 && window.stats[stat] < 5) {
+    if (delta > 0 && window.pointPool > 0 && window.stats[stat] < 2) {
         window.stats[stat]++;
         window.pointPool--;
-    } else if (delta < 0 && window.stats[stat] > 1) {
+    } else if (delta < 0 && window.stats[stat] > -1) {
         window.stats[stat]--;
         window.pointPool++;
     }
@@ -1060,9 +1061,10 @@ window.syncDelta = function() {
                     active_penalties: []
                 },
                 personnel: {
-                    lucius: { role: "ARCHITECT", tech: 2, cha: 2, log: 2, per: 2 },
-                    sarah: { morale: 100, tech: 4, cha: 1, log: 2, per: 4 },
-                    leo: { morale: 100, tech: 2, cha: 3, log: 3, per: 1 }
+                    lucius: { role: "ARCHITECT", tech: 0, cha: 0, log: 0, per: 0 },
+                    sarah: { morale: 100, tech: 2, cha: -1, log: 0, per: 2 },
+                    leo: { morale: 100, tech: 1, cha: 1, log: 1, per: -1 },
+                    synergy: { sarah_and_leo: 0 }
                 },
                 storybook_images: {},
                 chronicle: [],
@@ -1420,8 +1422,8 @@ window.loadCampaignFromConnectedFolder = async function() {
 };
 
 window.startNewCampaignWizard = function() {
-    window.stats = { tech: 2, cha: 2, log: 2, per: 2 };
-    window.pointPool = 4;
+    window.stats = { tech: 0, cha: 0, log: 0, per: 0 };
+    window.pointPool = 2;
     
     document.getElementById("p-powertrain").selectedIndex = 0;
     document.getElementById("p-segment").selectedIndex = 0;
@@ -1429,11 +1431,11 @@ window.startNewCampaignWizard = function() {
     document.getElementById("p-perk").selectedIndex = 0;
     document.getElementById("p-flaw").selectedIndex = 0;
     
-    document.getElementById("v-tech").innerText = "2";
-    document.getElementById("v-cha").innerText = "2";
-    document.getElementById("v-log").innerText = "2";
-    document.getElementById("v-per").innerText = "2";
-    document.getElementById("pool-display").innerText = "4";
+    document.getElementById("v-tech").innerText = "0";
+    document.getElementById("v-cha").innerText = "0";
+    document.getElementById("v-log").innerText = "0";
+    document.getElementById("v-per").innerText = "0";
+    document.getElementById("pool-display").innerText = "2";
     
     document.getElementById("prompt-output").value = "";
 
@@ -1483,7 +1485,7 @@ window.copyManualPrompt = function() {
 };
 
 window.compileMasterPrompt = function() {
-    if (window.pointPool > 0) {
+    if (!validateCreation(window.stats.tech, window.stats.cha, window.stats.log, window.stats.per)) {
         window.triggerToast("⚠️ STRUCTURAL FAULT", "ALLOCATE ALL REMAINING MATRIX ENERGY CAPACITY STACK CAPS.");
         return;
     }
@@ -1494,9 +1496,9 @@ window.compileMasterPrompt = function() {
     const flaw = document.getElementById("p-flaw").value;
 
     let classDesignation = "ENGINEER ARCHITECT";
-    if (window.stats.cha >= 4) classDesignation = "PROJECT DIRECTOR";
-    else if (window.stats.log >= 4) classDesignation = "OPERATIONS CHIEF";
-    else if (window.stats.per >= 4) classDesignation = "PRODUCT STRATEGIST";
+    if (window.stats.cha >= 2) classDesignation = "PROJECT DIRECTOR";
+    else if (window.stats.log >= 2) classDesignation = "OPERATIONS CHIEF";
+    else if (window.stats.per >= 2) classDesignation = "PRODUCT STRATEGIST";
 
     const startCash = funding.includes("500k") ? 500000 : (funding.includes("250k") ? 250000 : 120000);
 
@@ -1525,11 +1527,9 @@ window.compileMasterPrompt = function() {
                 log: window.stats.log,
                 per: window.stats.per,
             },
-            sarah: { morale: 100, tech: 4, cha: 1, log: 2, per: 4 },
-            leo: { morale: 100, tech: 2, cha: 3, log: 3, per: 1 },
-            synergy: {
-                leo_and_sarah: 0
-            }
+            sarah: { morale: 100, tech: 2, cha: -1, log: 0, per: 2 },
+            leo: { morale: 100, tech: 1, cha: 1, log: 1, per: -1 },
+            synergy: { sarah_and_leo: 0 }
         },
         storybook_images: {},
         chronicle: [],
