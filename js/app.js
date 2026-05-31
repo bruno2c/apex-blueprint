@@ -749,10 +749,39 @@ window.syncDelta = function() {
                 window.state.chronicle = delta.chronicle;
             } else {
                 if (!window.state.chronicle) window.state.chronicle = [];
+                
+                const recordedWeeks = new Set();
                 const existing = new Set(window.state.chronicle);
-                for (const entry of delta.chronicle) {
+                
+                for (const entry of window.state.chronicle) {
+                    const match = entry.match(/^W(\d+)\s*:/i);
+                    if (match) {
+                        recordedWeeks.add(parseInt(match[1], 10));
+                    }
+                }
+                
+                const incoming = Array.isArray(delta.chronicle) ? delta.chronicle : [delta.chronicle];
+                for (const entry of incoming) {
+                    // Skip groupings like W1-W13: [...]
+                    const isGrouping = /^W\d+\s*-\s*W?\d+\s*:/i.test(entry);
+                    if (isGrouping) {
+                        continue;
+                    }
+                    
+                    // Parse week number
+                    const weekMatch = entry.match(/^W(\d+)\s*:/i);
+                    if (weekMatch) {
+                        const weekNum = parseInt(weekMatch[1], 10);
+                        if (recordedWeeks.has(weekNum)) {
+                            // Skip weeks which are already recorded
+                            continue;
+                        }
+                        recordedWeeks.add(weekNum);
+                    }
+                    
                     if (!existing.has(entry)) {
                         window.state.chronicle.push(entry);
+                        existing.add(entry);
                     }
                 }
             }
