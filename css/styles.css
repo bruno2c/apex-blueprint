@@ -802,5 +802,149 @@ textarea {
     border-color: var(--ink-black);
 }
 
+/* Analytics Roster Tab Styling */
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+    gap: 24px;
+    margin-top: 16px;
+}
+
+.analytics-card {
+    background: var(--panel-nested);
+    border: var(--border-thick);
+    box-shadow: 6px 6px 0px var(--ink-black);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.analytics-card-title {
+    font-family: "Permanent Marker", cursive;
+    font-size: 16px;
+    color: var(--comic-amber);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.chart-container {
+    background: #0d1e32;
+    border: var(--border-thin);
+    border-color: rgba(255, 255, 255, 0.1);
+    position: relative;
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.chart-fallback {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-family: "JetBrains Mono", monospace;
+    padding: 60px 0;
+}
+
+/* SVG Chart Elements */
+.chart-grid-line {
+    stroke: rgba(255, 255, 255, 0.05);
+    stroke-width: 1;
+    stroke-dasharray: 2 4;
+}
+
+.chart-axis-line {
+    stroke: var(--text-muted);
+    stroke-width: 1.5;
+}
+
+.chart-axis-text {
+    fill: var(--text-muted);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.chart-path-cash {
+    stroke: var(--comic-amber);
+    stroke-width: 3;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.chart-path-burn {
+    stroke: var(--comic-red);
+    stroke-width: 2;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 4 4;
+}
+
+.chart-path-progress {
+    stroke: var(--comic-green);
+    stroke-width: 3;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.chart-dot-cash {
+    fill: var(--comic-amber);
+    stroke: var(--ink-black);
+    stroke-width: 2;
+    cursor: pointer;
+    transition: r 0.15s ease;
+}
+.chart-dot-cash:hover {
+    r: 6;
+}
+
+.chart-dot-burn {
+    fill: var(--comic-red);
+    stroke: var(--ink-black);
+    stroke-width: 1.5;
+    cursor: pointer;
+    transition: r 0.15s ease;
+}
+.chart-dot-burn:hover {
+    r: 5;
+}
+
+.chart-dot-progress {
+    fill: var(--comic-green);
+    stroke: var(--ink-black);
+    stroke-width: 2;
+    cursor: pointer;
+    transition: r 0.15s ease;
+}
+.chart-dot-progress:hover {
+    r: 6;
+}
+
+.chart-legend {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    font-weight: bold;
+    justify-content: flex-end;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.legend-color-box {
+    width: 12px;
+    height: 12px;
+    border: 1px solid var(--ink-black);
+}
+
+
 
 

@@ -31,6 +31,7 @@ window.state = {
     },
     storybook_images: {},
     chronicle: [],
+    history: []
 };
 window.stats = { tech: 2, cha: 2, log: 2, per: 2 };
 window.pointPool = 4;
@@ -364,6 +365,18 @@ window.ensureStateSanity = function() {
             }
         }
     }
+
+    // Upgrade legacy slates: ensure state history exists
+    if (!window.state.history || window.state.history.length === 0) {
+        window.state.history = [
+            {
+                week: window.state.week !== undefined ? window.state.week : 1,
+                cash: window.state.cash !== undefined ? window.state.cash : 0,
+                burn: window.state.burn !== undefined ? window.state.burn : 0,
+                protoProgress: window.state.protoProgress !== undefined ? window.state.protoProgress : 0
+            }
+        ];
+    }
 };
 
 window.renderStateToDashboard = function() {
@@ -413,6 +426,239 @@ window.renderStateToDashboard = function() {
         window.state.network = {};
     }
     window.renderRolodexView();
+    if (typeof window.renderAnalyticsView === "function") {
+        window.renderAnalyticsView();
+    }
+};
+
+window.renderAnalyticsView = function() {
+    const cashContainer = document.getElementById("cash-chart-container");
+    const progressContainer = document.getElementById("progress-chart-container");
+    if (!cashContainer || !progressContainer) return;
+
+    const history = window.state.history || [];
+    if (history.length === 0) {
+        cashContainer.innerHTML = `<div class="chart-fallback">Record weekly updates to plot analytics.</div>`;
+        progressContainer.innerHTML = `<div class="chart-fallback">Record weekly updates to plot analytics.</div>`;
+        return;
+    }
+
+    cashContainer.innerHTML = window.generateCashChartSvg(history);
+    progressContainer.innerHTML = window.generateProgressChartSvg(history);
+};
+
+window.generateCashChartSvg = function(history) {
+    const cashVals = history.map(h => h.cash || 0);
+    const burnVals = history.map(h => h.burn || 0);
+    const minVal = Math.min(...cashVals, ...burnVals, 0);
+    const maxVal = Math.max(...cashVals, ...burnVals, 10000);
+    
+    const minY = minVal < 0 ? Math.floor(minVal * 1.1 / 10000) * 10000 : 0;
+    const maxY = Math.ceil(maxVal * 1.1 / 10000) * 10000;
+    
+    const weeks = history.map(h => h.week);
+    const minWeek = Math.min(...weeks, 1);
+    const maxWeek = Math.max(...weeks, minWeek + 1);
+
+    // X Axis Ticks
+    let xTicks = [];
+    const weekRange = maxWeek - minWeek;
+    if (weekRange <= 10) {
+        for (let w = minWeek; w <= maxWeek; w++) {
+            xTicks.push(w);
+        }
+    } else {
+        let step = Math.ceil(weekRange / 8);
+        if (step > 2 && step < 5) step = 5;
+        else if (step > 5 && step < 10) step = 10;
+        for (let w = minWeek; w <= maxWeek; w += step) {
+            xTicks.push(w);
+        }
+        if (xTicks[xTicks.length - 1] !== maxWeek) {
+            xTicks.push(maxWeek);
+        }
+    }
+
+    // Y Axis Ticks
+    let yTicks = [];
+    const ySteps = 4;
+    for (let i = 0; i <= ySteps; i++) {
+        yTicks.push(minY + (i / ySteps) * (maxY - minY));
+    }
+
+    function formatCashLabel(val) {
+        if (val >= 1000000) return `$${(val / 1000000).toFixed(1)}M`;
+        if (val >= 1000) return `$${(val / 1000).toFixed(0)}k`;
+        if (val <= -1000000) return `-$${(Math.abs(val) / 1000000).toFixed(1)}M`;
+        if (val <= -1000) return `-$${(Math.abs(val) / 1000).toFixed(0)}k`;
+        return `$${val}`;
+    }
+
+    let yGridLines = "";
+    let yLabels = "";
+    yTicks.forEach(tickVal => {
+        const y = 210 - ((tickVal - minY) / (maxY - minY || 1)) * 190;
+        yGridLines += `<line x1="65" y1="${y}" x2="480" y2="${y}" class="chart-grid-line" />`;
+        yLabels += `<text x="55" y="${y + 4}" text-anchor="end" class="chart-axis-text">${formatCashLabel(tickVal)}</text>`;
+    });
+
+    let xGridLines = "";
+    let xLabels = "";
+    xTicks.forEach(w => {
+        const x = 65 + (maxWeek === minWeek ? 0.5 : (w - minWeek) / (maxWeek - minWeek)) * 415;
+        xGridLines += `<line x1="${x}" y1="20" x2="${x}" y2="210" class="chart-grid-line" />`;
+        xLabels += `<text x="${x}" y="225" text-anchor="middle" class="chart-axis-text">W${w}</text>`;
+    });
+
+    let paths = "";
+    if (history.length > 1) {
+        let cashPathPoints = [];
+        let burnPathPoints = [];
+        history.forEach(h => {
+            const x = 65 + (h.week - minWeek) / (maxWeek - minWeek) * 415;
+            const yCash = 210 - (((h.cash || 0) - minY) / (maxY - minY || 1)) * 190;
+            const yBurn = 210 - (((h.burn || 0) - minY) / (maxY - minY || 1)) * 190;
+            cashPathPoints.push(`${x},${yCash}`);
+            burnPathPoints.push(`${x},${yBurn}`);
+        });
+        paths += `<path d="M ${cashPathPoints.join(' L ')}" class="chart-path-cash" />`;
+        paths += `<path d="M ${burnPathPoints.join(' L ')}" class="chart-path-burn" />`;
+    }
+
+    let dots = "";
+    history.forEach(h => {
+        const x = 65 + (maxWeek === minWeek ? 0.5 : (h.week - minWeek) / (maxWeek - minWeek)) * 415;
+        const yCash = 210 - (((h.cash || 0) - minY) / (maxY - minY || 1)) * 190;
+        const yBurn = 210 - (((h.burn || 0) - minY) / (maxY - minY || 1)) * 190;
+        dots += `
+            <circle cx="${x}" cy="${yCash}" r="4" class="chart-dot-cash">
+                <title>Week ${h.week}: Capital $${(h.cash || 0).toLocaleString()}</title>
+            </circle>
+            <circle cx="${x}" cy="${yBurn}" r="3.5" class="chart-dot-burn">
+                <title>Week ${h.week}: Burn Rate $${(h.burn || 0).toLocaleString()}</title>
+            </circle>
+        `;
+    });
+
+    const svg = `
+        <svg viewBox="0 0 500 250" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            ${yGridLines}
+            ${xGridLines}
+            <line x1="65" y1="210" x2="480" y2="210" class="chart-axis-line" />
+            <line x1="65" y1="20" x2="65" y2="210" class="chart-axis-line" />
+            ${yLabels}
+            ${xLabels}
+            ${paths}
+            ${dots}
+        </svg>
+        <div class="chart-legend">
+            <div class="legend-item">
+                <div class="legend-color-box" style="background-color: var(--comic-amber);"></div>
+                <span>Capital</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color-box" style="background-color: var(--comic-red); border: none; border-bottom: 2px dashed var(--comic-red); height: 0; width: 14px; margin-top: 4px;"></div>
+                <span>Burn Rate</span>
+            </div>
+        </div>
+    `;
+    return svg;
+};
+
+window.generateProgressChartSvg = function(history) {
+    const progressVals = history.map(h => h.protoProgress || 0);
+    const maxVal = Math.max(...progressVals, 100);
+    
+    const minY = 0;
+    const maxY = Math.ceil(maxVal / 20) * 20;
+    
+    const weeks = history.map(h => h.week);
+    const minWeek = Math.min(...weeks, 1);
+    const maxWeek = Math.max(...weeks, minWeek + 1);
+
+    // X Axis Ticks
+    let xTicks = [];
+    const weekRange = maxWeek - minWeek;
+    if (weekRange <= 10) {
+        for (let w = minWeek; w <= maxWeek; w++) {
+            xTicks.push(w);
+        }
+    } else {
+        let step = Math.ceil(weekRange / 8);
+        if (step > 2 && step < 5) step = 5;
+        else if (step > 5 && step < 10) step = 10;
+        for (let w = minWeek; w <= maxWeek; w += step) {
+            xTicks.push(w);
+        }
+        if (xTicks[xTicks.length - 1] !== maxWeek) {
+            xTicks.push(maxWeek);
+        }
+    }
+
+    // Y Axis Ticks
+    let yTicks = [];
+    const ySteps = 5;
+    for (let i = 0; i <= ySteps; i++) {
+        yTicks.push(minY + (i / ySteps) * (maxY - minY));
+    }
+
+    let yGridLines = "";
+    let yLabels = "";
+    yTicks.forEach(tickVal => {
+        const y = 210 - ((tickVal - minY) / (maxY - minY || 1)) * 190;
+        yGridLines += `<line x1="65" y1="${y}" x2="480" y2="${y}" class="chart-grid-line" />`;
+        yLabels += `<text x="55" y="${y + 4}" text-anchor="end" class="chart-axis-text">${tickVal}%</text>`;
+    });
+
+    let xGridLines = "";
+    let xLabels = "";
+    xTicks.forEach(w => {
+        const x = 65 + (maxWeek === minWeek ? 0.5 : (w - minWeek) / (maxWeek - minWeek)) * 415;
+        xGridLines += `<line x1="${x}" y1="20" x2="${x}" y2="210" class="chart-grid-line" />`;
+        xLabels += `<text x="${x}" y="225" text-anchor="middle" class="chart-axis-text">W${w}</text>`;
+    });
+
+    let paths = "";
+    if (history.length > 1) {
+        let progressPathPoints = [];
+        history.forEach(h => {
+            const x = 65 + (h.week - minWeek) / (maxWeek - minWeek) * 415;
+            const yProgress = 210 - (((h.protoProgress || 0) - minY) / (maxY - minY || 1)) * 190;
+            progressPathPoints.push(`${x},${yProgress}`);
+        });
+        paths += `<path d="M ${progressPathPoints.join(' L ')}" class="chart-path-progress" />`;
+    }
+
+    let dots = "";
+    history.forEach(h => {
+        const x = 65 + (maxWeek === minWeek ? 0.5 : (h.week - minWeek) / (maxWeek - minWeek)) * 415;
+        const yProgress = 210 - (((h.protoProgress || 0) - minY) / (maxY - minY || 1)) * 190;
+        dots += `
+            <circle cx="${x}" cy="${yProgress}" r="4" class="chart-dot-progress">
+                <title>Week ${h.week}: Progress ${(h.protoProgress || 0)}%</title>
+            </circle>
+        `;
+    });
+
+    const svg = `
+        <svg viewBox="0 0 500 250" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            ${yGridLines}
+            ${xGridLines}
+            <line x1="65" y1="210" x2="480" y2="210" class="chart-axis-line" />
+            <line x1="65" y1="20" x2="65" y2="210" class="chart-axis-line" />
+            ${yLabels}
+            ${xLabels}
+            ${paths}
+            ${dots}
+        </svg>
+        <div class="chart-legend">
+            <div class="legend-item">
+                <div class="legend-color-box" style="background-color: var(--comic-green);"></div>
+                <span>Prototype Progress</span>
+            </div>
+        </div>
+    `;
+    return svg;
 };
 
 // =================== NPC ROLODEX & AVATAR CROP UTILITIES ===================
@@ -819,7 +1065,8 @@ window.syncDelta = function() {
                     leo: { morale: 100, tech: 2, cha: 3, log: 3, per: 1 }
                 },
                 storybook_images: {},
-                chronicle: []
+                chronicle: [],
+                history: []
             };
             window.setAppState("game");
         } else if (!window.state.campaignId) {
@@ -913,6 +1160,23 @@ window.syncDelta = function() {
                 window.state.network[key] = { ...(window.state.network[key] || {}), ...val };
             }
         }
+
+        // Update history tracking array
+        if (!window.state.history) window.state.history = [];
+        const currentWeekNum = window.state.week || 1;
+        const existingRecordIndex = window.state.history.findIndex(h => h.week === currentWeekNum);
+        const newRecord = {
+            week: currentWeekNum,
+            cash: window.state.cash !== undefined ? window.state.cash : 0,
+            burn: window.state.burn !== undefined ? window.state.burn : 0,
+            protoProgress: window.state.protoProgress !== undefined ? window.state.protoProgress : 0
+        };
+        if (existingRecordIndex >= 0) {
+            window.state.history[existingRecordIndex] = newRecord;
+        } else {
+            window.state.history.push(newRecord);
+        }
+        window.state.history.sort((a, b) => a.week - b.week);
 
         if (!window.state.storybook_images) {
             window.state.storybook_images = {};
@@ -1269,6 +1533,14 @@ window.compileMasterPrompt = function() {
         },
         storybook_images: {},
         chronicle: [],
+        history: [
+            {
+                week: 1,
+                cash: startCash,
+                burn: 8000,
+                protoProgress: 0
+            }
+        ]
     };
 
     if (perk.includes("Academic")) {

@@ -39,6 +39,13 @@
                 </button>
                 <button
                     class="tab-btn"
+                    id="btn-analytics-tab"
+                    onclick="window.switchTab('analytics-tab')"
+                >
+                    📈 ANALYTICS
+                </button>
+                <button
+                    class="tab-btn"
                     id="btn-storybook-tab"
                     onclick="window.switchTab('storybook-tab')"
                 >
@@ -265,6 +272,27 @@
                                 accept=".json"
                                 onchange="window.importDataSlateJson(event)"
                             />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WORKSHOP PERFORMANCE ANALYTICS PANEL TAB CONTAINER -->
+            <div id="analytics-tab" class="tab-content">
+                <div class="row-section">
+                    <div class="section-title">📈 WORKSHOP PERFORMANCE ANALYTICS</div>
+                    <div class="analytics-grid">
+                        <div class="analytics-card">
+                            <div class="analytics-card-title">💵 CAPITAL & BURN TREND ($)</div>
+                            <div class="chart-container" id="cash-chart-container">
+                                <div style="text-align: center; color: var(--text-muted); font-size: 12px; padding: 40px 0;">Record weekly updates to plot analytics.</div>
+                            </div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="analytics-card-title">⚙️ PROTOTYPE DEVELOPMENT VELOCITY (%)</div>
+                            <div class="chart-container" id="progress-chart-container">
+                                <div style="text-align: center; color: var(--text-muted); font-size: 12px; padding: 40px 0;">Record weekly updates to plot analytics.</div>
+                            </div>
                         </div>
                     </div>
                 </div>
