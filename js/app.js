@@ -26,9 +26,7 @@ window.state = {
         sarah: { morale: 100, tech: 4, cha: 1, log: 2, per: 4 },
         leo: { morale: 100, tech: 2, cha: 3, log: 3, per: 1 },
         synergy: {
-            leo_and_lucius: 0,
-            leo_and_sarah: 0,
-            lucius_and_sarah: 0
+            leo_and_sarah: 0
         }
     },
     storybook_images: {},
@@ -333,7 +331,14 @@ window.ensureStateSanity = function() {
         window.state.personnel.synergy = {};
     }
 
-    const characters = Object.keys(window.state.personnel).filter(k => k !== "synergy");
+    // Cleanup any legacy synergy keys that involve Lucius
+    for (const synKey of Object.keys(window.state.personnel.synergy)) {
+        if (synKey.includes("lucius")) {
+            delete window.state.personnel.synergy[synKey];
+        }
+    }
+
+    const characters = Object.keys(window.state.personnel).filter(k => k !== "synergy" && k !== "lucius");
     
     for (let i = 0; i < characters.length; i++) {
         for (let j = i + 1; j < characters.length; j++) {
@@ -1259,9 +1264,7 @@ window.compileMasterPrompt = function() {
             sarah: { morale: 100, tech: 4, cha: 1, log: 2, per: 4 },
             leo: { morale: 100, tech: 2, cha: 3, log: 3, per: 1 },
             synergy: {
-                leo_and_lucius: 0,
-                leo_and_sarah: 0,
-                lucius_and_sarah: 0
+                leo_and_sarah: 0
             }
         },
         storybook_images: {},

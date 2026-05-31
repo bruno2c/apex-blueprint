@@ -62,7 +62,7 @@ Your workshop is staffed by three key crew members, each with specific attribute
 ---
 
 ## 4. Team Synergy & Friction Mechanics
-The interpersonal relationships between your crew members directly impact the success of joint operations. The dashboard tracks the mutual synergy between all pairs of characters (e.g., `Lucius ✦ Sarah`, `Lucius ✦ Cousin Leo`, and `Sarah ✦ Cousin Leo`).
+The interpersonal relationships between your crew members directly impact the success of joint operations. The dashboard tracks the mutual synergy between all pairs of companion characters, excluding the Architect/player (e.g. `Sarah ✦ Cousin Leo`).
 
 * **Synergy Metric Scale**: Ranges from `-3` (Active Hostility / Mutual Refusal to Cooperate) to `+3` (Seamless Cohesion / High Trust). The baseline is `0` (Professional Neutrality).
 * **Joint Operations**: When you assign two characters to collaborate on a single task, their mutual synergy score is applied as a direct modifier to the action's success roll.
