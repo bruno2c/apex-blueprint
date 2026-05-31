@@ -136,7 +136,7 @@ function formatCurrency(val) {
     return num.toLocaleString();
 }
 
-window.updateCharacterUIPanels = function() {
+window.updateCharacterUIPanels = async function() {
     const container = document.getElementById("crew-roster-container");
     if (!container) return;
 
@@ -192,7 +192,23 @@ window.updateCharacterUIPanels = function() {
         const statValueStyle = key === "lucius" || morale === undefined ? `style="color: var(--comic-amber);"` : `style="color: #fff;"`;
 
         // Image source matching pattern: images/[key]_avatar.png
-        const imgSrc = `images/${key.toLowerCase()}_avatar.png`;
+        let imgSrc = `images/${key.toLowerCase()}_avatar.png`;
+
+        // If it's a new character (not lucius, sarah, or leo) and folder is connected, load from avatars/ folder
+        const baseChars = ["lucius", "sarah", "leo"];
+        if (!baseChars.includes(key.toLowerCase()) && window.dirHandle) {
+            try {
+                const permitted = await window.verifyDirectoryPermission(false);
+                if (permitted) {
+                    const avatarsDir = await window.dirHandle.getDirectoryHandle("avatars", { create: false });
+                    const fileHandle = await avatarsDir.getFileHandle(`${key.toLowerCase()}_avatar.png`, { create: false });
+                    const file = await fileHandle.getFile();
+                    imgSrc = URL.createObjectURL(file);
+                }
+            } catch (e) {
+                console.debug(`Local avatar for new char ${key} not found in avatars/ directory.`);
+            }
+        }
 
         html += `
             <div class="crew-card" ${borderStyle}>
