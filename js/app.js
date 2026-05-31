@@ -1463,7 +1463,11 @@ window.updateMergedPromptDisplay = function() {
         return;
     }
 
-    const activePayload = JSON.stringify(window.state, null, 2);
+    // Clone state and delete large nested structures not needed by the GM prompt context
+    const cleanState = JSON.parse(JSON.stringify(window.state));
+    delete cleanState.history;
+    delete cleanState.storybook_images;
+    const activePayload = JSON.stringify(cleanState, null, 2);
     const isNewGame = window.state.week === 1 && window.state.protoProgress === 0;
     const executionInstruction = isNewGame
         ? `🏁 EXECUTE INITIAL ASSEMBLY LINE ENGAGEMENT (WEEK 1)\nEstablish the initial aged blueprint workshop setting. Introduce Companion Sarah & Companion Leo utilizing their defined companion stats, and issue the first week 1 strategic mechanical choice check array.`
