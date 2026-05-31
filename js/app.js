@@ -10,6 +10,7 @@ window.state = {
         funding: "Bootstrapped",
         perk: "Corporate Dropout",
     },
+    network: {},
     facility_modifiers: {
         flaw: "Drafty Roof",
         active_penalties: [],
@@ -294,6 +295,195 @@ window.renderStateToDashboard = function() {
     }
 
     window.updateCharacterUIPanels();
+    if (window.state && !window.state.network) {
+        window.state.network = {};
+    }
+    window.renderRolodexView();
+};
+
+// =================== NPC ROLODEX & AVATAR CROP UTILITIES ===================
+window.activeCropNpcId = null;
+window.cropPanX = 0;
+window.cropPanY = 0;
+window.cropZoom = 1;
+window.isDraggingCropImg = false;
+window.dragStartX = 0;
+window.dragStartY = 0;
+
+window.getNpcAvatarSrc = async function(npcId) {
+    if (window.dirHandle) {
+        try {
+            const permitted = await window.verifyDirectoryPermission(false);
+            if (permitted) {
+                const avatarsDir = await window.dirHandle.getDirectoryHandle("avatars", { create: false });
+                const fileHandle = await avatarsDir.getFileHandle(`${npcId}_avatar.png`, { create: false });
+                const file = await fileHandle.getFile();
+                return URL.createObjectURL(file);
+            }
+        } catch (e) {
+            console.debug(`Local avatar file avatars/${npcId}_avatar.png not found.`);
+        }
+    }
+    if (window.state.network && window.state.network[npcId] && window.state.network[npcId].avatar) {
+        return window.state.network[npcId].avatar;
+    }
+    return null;
+};
+
+window.renderRolodexView = async function() {
+    const grid = document.getElementById("rolodex-grid-container");
+    if (!grid) return;
+
+    if (!window.state || !window.state.network || Object.keys(window.state.network).length === 0) {
+        grid.innerHTML = `<div style="grid-column: span 3; text-align: center; color: var(--text-muted); padding: 40px; font-size: 13px;">No secondary contacts registered in network. Submit narrative slates introducing NPCs to build database.</div>`;
+        return;
+    }
+
+    let html = "";
+    for (const [npcId, npc] of Object.entries(window.state.network)) {
+        const name = npc.name || npcId.toUpperCase();
+        const role = npc.role || "Contact";
+        const status = npc.status || "Neutral";
+        const notes = npc.notes || "No description files saved.";
+
+        let statusColor = "var(--comic-amber)";
+        if (status.toLowerCase().includes("favorable") || status.toLowerCase().includes("friendly") || status.toLowerCase().includes("ally")) {
+            statusColor = "var(--comic-green)";
+        } else if (status.toLowerCase().includes("unfavorable") || status.toLowerCase().includes("hostile") || status.toLowerCase().includes("enemy")) {
+            statusColor = "var(--comic-red)";
+        }
+
+        const avatarSrc = await window.getNpcAvatarSrc(npcId);
+
+        let imgHtml = "";
+        if (avatarSrc) {
+            imgHtml = `<img src="${avatarSrc}" alt="${name}" />`;
+        } else {
+            imgHtml = `<div class="rolodex-avatar-fallback">NO DOSSIER IMAGERY FILE</div>`;
+        }
+
+        html += `
+            <div class="rolodex-card">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; flex-shrink: 0;">
+                    <div class="rolodex-avatar-pill" style="border-color: var(--comic-amber);">
+                        ${imgHtml}
+                    </div>
+                    <label class="btn-utility-upload">
+                        📁 UPLOAD
+                        <input type="file" accept="image/*" style="display: none;" onchange="window.handleNpcAvatarUpload(event, '${npcId}')" />
+                    </label>
+                </div>
+                <div class="crew-info-block">
+                    <div class="crew-name" style="color: var(--comic-amber);">${name}</div>
+                    <div class="crew-role" style="margin-bottom: 4px; color: var(--text-main); font-weight: bold; text-transform: uppercase;">${role}</div>
+                    <div style="font-size: 10px; font-weight: bold; margin-bottom: 8px;">
+                        STATUS: <span style="color: ${statusColor}; text-transform: uppercase;">${status}</span>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-muted); line-height: 1.3; background: rgba(0,0,0,0.2); padding: 8px; border: var(--border-thin); min-height: 48px; border-color: rgba(255,255,255,0.05);">
+                        ${notes}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    grid.innerHTML = html;
+};
+
+window.handleNpcAvatarUpload = function(event, npcId) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        window.openCropModal(e.target.result, npcId);
+        event.target.value = "";
+    };
+    reader.readAsDataURL(file);
+};
+
+window.openCropModal = function(imageSrc, npcId) {
+    window.activeCropNpcId = npcId;
+    window.cropPanX = 0;
+    window.cropPanY = 0;
+    window.cropZoom = 1;
+    
+    const modal = document.getElementById("crop-modal");
+    const imgNode = document.getElementById("crop-img-node");
+    const slider = document.getElementById("crop-zoom-slider");
+    
+    if (imgNode) {
+        imgNode.src = imageSrc;
+        imgNode.style.display = "block";
+        imgNode.style.transform = `translate(0px, 0px) scale(1)`;
+    }
+    if (slider) {
+        slider.value = 1;
+    }
+    if (modal) {
+        modal.classList.add("active");
+    }
+};
+
+window.cancelAvatarCrop = function() {
+    const modal = document.getElementById("crop-modal");
+    if (modal) modal.classList.remove("active");
+    window.activeCropNpcId = null;
+};
+
+window.applyAvatarCrop = function() {
+    const npcId = window.activeCropNpcId;
+    if (!npcId) return;
+
+    const imgNode = document.getElementById("crop-img-node");
+    if (!imgNode || !imgNode.src) return;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 168;
+    canvas.height = 240;
+    const ctx = canvas.getContext("2d");
+
+    ctx.fillStyle = "#102a43";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const zoom = window.cropZoom;
+    const dx = window.cropPanX - 56;
+    const dy = window.cropPanY - 55;
+
+    ctx.drawImage(
+        imgNode,
+        dx,
+        dy,
+        imgNode.naturalWidth * zoom,
+        imgNode.naturalHeight * zoom
+    );
+
+    const base64Data = canvas.toDataURL("image/png");
+    
+    if (!window.state.network) window.state.network = {};
+    if (!window.state.network[npcId]) window.state.network[npcId] = {};
+    window.state.network[npcId].avatar = base64Data;
+    
+    window.saveState();
+    window.renderRolodexView();
+    window.triggerToast("📁 DOSSIER UPDATED", "Aligned dossier photo saved for contact.");
+
+    canvas.toBlob(async (blob) => {
+        if (blob && window.dirHandle) {
+            try {
+                const avatarsDir = await window.dirHandle.getDirectoryHandle("avatars", { create: true });
+                const fileHandle = await avatarsDir.getFileHandle(`${npcId}_avatar.png`, { create: true });
+                const writable = await fileHandle.createWritable();
+                await writable.write(blob);
+                await writable.close();
+                console.log(`Binary avatar file saved locally under avatars/${npcId}_avatar.png`);
+            } catch (err) {
+                console.error("Local file system directory save failed:", err);
+            }
+        }
+    }, "image/png");
+
+    window.cancelAvatarCrop();
 };
 
 window.getStorybookImageSrc = async function(week) {
@@ -504,6 +694,7 @@ window.syncDelta = function() {
                     funding: "Bootstrapped",
                     perk: "Corporate Dropout"
                 },
+                network: {},
                 facility_modifiers: {
                     flaw: "Drafty Roof",
                     active_penalties: []
@@ -541,6 +732,13 @@ window.syncDelta = function() {
         if (delta.personnel) {
             for (const [key, val] of Object.entries(delta.personnel)) {
                 window.state.personnel[key] = { ...(window.state.personnel[key] || {}), ...val };
+            }
+        }
+
+        if (!window.state.network) window.state.network = {};
+        if (delta.network) {
+            for (const [key, val] of Object.entries(delta.network)) {
+                window.state.network[key] = { ...(window.state.network[key] || {}), ...val };
             }
         }
 
@@ -878,6 +1076,7 @@ window.compileMasterPrompt = function() {
             funding: funding.split(" ")[0],
             perk: perk.split(" ")[0],
         },
+        network: {},
         facility_modifiers: {
             flaw: flaw.split(" ")[0],
             active_penalties: [],
@@ -1307,6 +1506,56 @@ window.renderConfigView = function() {
 };
 
 window.addEventListener("DOMContentLoaded", () => {
+    // Add crop dragging/slider listeners
+    const viewport = document.getElementById("crop-viewport-container");
+    const imgNode = document.getElementById("crop-img-node");
+    const slider = document.getElementById("crop-zoom-slider");
+
+    if (viewport && imgNode && slider) {
+        viewport.addEventListener("mousedown", (e) => {
+            e.preventDefault();
+            window.isDraggingCropImg = true;
+            window.dragStartX = e.clientX - window.cropPanX;
+            window.dragStartY = e.clientY - window.cropPanY;
+            viewport.style.cursor = "grabbing";
+        });
+        
+        window.addEventListener("mousemove", (e) => {
+            if (!window.isDraggingCropImg) return;
+            window.cropPanX = e.clientX - window.dragStartX;
+            window.cropPanY = e.clientY - window.dragStartY;
+            imgNode.style.transform = `translate(${window.cropPanX}px, ${window.cropPanY}px) scale(${window.cropZoom})`;
+        });
+        
+        window.addEventListener("mouseup", () => {
+            window.isDraggingCropImg = false;
+            viewport.style.cursor = "move";
+        });
+
+        // Touch support for dragging
+        viewport.addEventListener("touchstart", (e) => {
+            if (e.touches.length === 1) {
+                window.isDraggingCropImg = true;
+                window.dragStartX = e.touches[0].clientX - window.cropPanX;
+                window.dragStartY = e.touches[0].clientY - window.cropPanY;
+            }
+        });
+        viewport.addEventListener("touchmove", (e) => {
+            if (!window.isDraggingCropImg || e.touches.length !== 1) return;
+            window.cropPanX = e.touches[0].clientX - window.dragStartX;
+            window.cropPanY = e.touches[0].clientY - window.dragStartY;
+            imgNode.style.transform = `translate(${window.cropPanX}px, ${window.cropPanY}px) scale(${window.cropZoom})`;
+        });
+        viewport.addEventListener("touchend", () => {
+            window.isDraggingCropImg = false;
+        });
+        
+        slider.addEventListener("input", (e) => {
+            window.cropZoom = parseFloat(e.target.value);
+            imgNode.style.transform = `translate(${window.cropPanX}px, ${window.cropPanY}px) scale(${window.cropZoom})`;
+        });
+    }
+
     if (typeof window.loadPromptsFromFiles === "function") {
         window.loadPromptsFromFiles();
     }
