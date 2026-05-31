@@ -25,6 +25,11 @@ window.state = {
         },
         sarah: { morale: 100, tech: 4, cha: 1, log: 2, per: 4 },
         leo: { morale: 100, tech: 2, cha: 3, log: 3, per: 1 },
+        synergy: {
+            leo_and_lucius: 0,
+            leo_and_sarah: 0,
+            lucius_and_sarah: 0
+        }
     },
     storybook_images: {},
     chronicle: [],
@@ -153,6 +158,7 @@ window.updateCharacterUIPanels = async function() {
 
     let html = "";
     for (const [key, charData] of Object.entries(window.state.personnel)) {
+        if (key === "synergy") continue;
         const displayName = nameMap[key] || key.toUpperCase();
         
         // Morale status and colors
@@ -247,6 +253,57 @@ window.updateCharacterUIPanels = async function() {
         `;
     }
 
+    // Generate Synergy Relationship Cards
+    const synergyObj = window.state.personnel.synergy || {};
+    for (const [synKey, synVal] of Object.entries(synergyObj)) {
+        const parts = synKey.split("_and_");
+        if (parts.length !== 2) continue;
+        
+        const name1 = nameMap[parts[0]] || parts[0].toUpperCase();
+        const name2 = nameMap[parts[1]] || parts[1].toUpperCase();
+        
+        const val = Math.min(Math.max(parseInt(synVal, 10) || 0, -3), 3);
+        
+        let colorClass = "active-neutral";
+        let label = "STANDARD ALIGNMENT";
+        
+        if (val > 0) {
+            colorClass = "active-positive";
+            label = "COOPERATIVE EFFICIENCY";
+        } else if (val < 0) {
+            colorClass = "active-negative";
+            label = "ACTIVE FRICTION NODE";
+        }
+        
+        const formattedVal = val > 0 ? `+${val}` : val;
+        
+        let cellsHtml = "";
+        for (let i = -3; i <= 3; i++) {
+            let fillClass = "";
+            if (i === val) {
+                if (val > 0) fillClass = "fill-positive";
+                else if (val < 0) fillClass = "fill-negative";
+                else fillClass = "fill-neutral";
+            }
+            cellsHtml += `<div class="synergy-block-cell ${fillClass}"></div>`;
+        }
+        
+        html += `
+            <div class="synergy-bridge-panel ${colorClass}">
+                <div class="synergy-header">🤝 RELATIONSHIP</div>
+                <div class="synergy-header" style="font-size: 11px; color: var(--text-muted); margin-top: -6px;">
+                    ${name1} ✦ ${name2}
+                </div>
+                <div class="synergy-indicator-label ${colorClass}">
+                    ${label} (${formattedVal})
+                </div>
+                <div class="synergy-visual-bar">
+                    ${cellsHtml}
+                </div>
+            </div>
+        `;
+    }
+
     container.innerHTML = html;
 };
 
@@ -269,7 +326,43 @@ window.expandChronicleRanges = function(chronicle) {
     return expanded;
 };
 
+window.ensureStateSanity = function() {
+    if (!window.state) return;
+    if (!window.state.personnel) window.state.personnel = {};
+    if (!window.state.personnel.synergy) {
+        window.state.personnel.synergy = {};
+    }
+
+    const characters = Object.keys(window.state.personnel).filter(k => k !== "synergy");
+    
+    for (let i = 0; i < characters.length; i++) {
+        for (let j = i + 1; j < characters.length; j++) {
+            const charA = characters[i];
+            const charB = characters[j];
+            
+            const key1 = `${charA}_and_${charB}`;
+            const key2 = `${charB}_and_${charA}`;
+            
+            const existingVal1 = window.state.personnel.synergy[key1];
+            const existingVal2 = window.state.personnel.synergy[key2];
+            
+            const finalVal = existingVal1 !== undefined ? existingVal1 : (existingVal2 !== undefined ? existingVal2 : 0);
+            
+            const sortedKey = [charA, charB].sort().join("_and_");
+            window.state.personnel.synergy[sortedKey] = Math.min(Math.max(parseInt(finalVal, 10) || 0, -3), 3);
+            
+            if (sortedKey !== key1 && window.state.personnel.synergy[key1] !== undefined) {
+                delete window.state.personnel.synergy[key1];
+            }
+            if (sortedKey !== key2 && window.state.personnel.synergy[key2] !== undefined) {
+                delete window.state.personnel.synergy[key2];
+            }
+        }
+    }
+};
+
 window.renderStateToDashboard = function() {
+    window.ensureStateSanity();
     if (window.state && window.state.chronicle) {
         window.state.chronicle = window.expandChronicleRanges(window.state.chronicle);
     }
@@ -791,7 +884,21 @@ window.syncDelta = function() {
         if (!window.state.personnel) window.state.personnel = {};
         if (delta.personnel) {
             for (const [key, val] of Object.entries(delta.personnel)) {
-                window.state.personnel[key] = { ...(window.state.personnel[key] || {}), ...val };
+                if (key === "synergy") {
+                    if (!window.state.personnel.synergy) window.state.personnel.synergy = {};
+                    for (const [synKey, synVal] of Object.entries(val)) {
+                        const parts = synKey.split("_and_");
+                        if (parts.length === 2) {
+                            const sortedKey = parts.sort().join("_and_");
+                            const clampedVal = Math.min(Math.max(parseInt(synVal, 10) || 0, -3), 3);
+                            window.state.personnel.synergy[sortedKey] = clampedVal;
+                        } else {
+                            window.state.personnel.synergy[synKey] = synVal;
+                        }
+                    }
+                } else {
+                    window.state.personnel[key] = { ...(window.state.personnel[key] || {}), ...val };
+                }
             }
         }
 
@@ -1151,6 +1258,11 @@ window.compileMasterPrompt = function() {
             },
             sarah: { morale: 100, tech: 4, cha: 1, log: 2, per: 4 },
             leo: { morale: 100, tech: 2, cha: 3, log: 3, per: 1 },
+            synergy: {
+                leo_and_lucius: 0,
+                leo_and_sarah: 0,
+                lucius_and_sarah: 0
+            }
         },
         storybook_images: {},
         chronicle: [],

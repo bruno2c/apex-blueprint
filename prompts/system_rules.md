@@ -54,7 +54,12 @@ My calculated total is [INSERT_SCORE_HERE]. Run the PbtA resolution text first, 
  "personnel": {
      "lucius": { "role": "ARCHITECT", "tech": 2, "cha": 2, "log": 2, "per": 2 },
      "sarah": { "morale": 100, "tech": 4, "cha": 1, "log": 2, "per": 4 },
-     "leo": { "morale": 100, "tech": 2, "cha": 3, "log": 3, "per": 1 }
+     "leo": { "morale": 100, "tech": 2, "cha": 3, "log": 3, "per": 1 },
+     "synergy": {
+         "leo_and_lucius": 0,
+         "leo_and_sarah": 0,
+         "lucius_and_sarah": 0
+     }
  },
  "network": {
      "sample_npc_id": {
@@ -74,6 +79,11 @@ My calculated total is [INSERT_SCORE_HERE]. Run the PbtA resolution text first, 
 5. IMMERSIVE VISUAL GENERATION: At the absolute end of every COMPLETED week response, you MUST automatically include an inline image generation prompt illustrating the raw grit of the active week's garage dilemma. Omit this entirely if the game is frozen awaiting a dice roll.
 
 6. ✦ THE ROLODEX DIRECTIVE: Keep tracking context active on discovered secondary characters recorded under the 'network' data model key. If the user's action alters their faction alignment, trust, or professional status, you MUST dynamically alter or append that individual's data model dictionary attributes inside the raw snapshot JSON payload block at the absolute end of your turn resolution response.
+
+7. ✦ THE TEAM SYNERGY MECHANIC: The crew shares internal alignment friction metrics recorded under `personnel.synergy.[charA_and_charB]` (with character names sorted alphabetically, e.g. `leo_and_sarah`).
+   - Joint Operations: When the player assigns any two characters to collaborate or work together on a single task, you MUST explicitly command the player to incorporate their mutual synergy score as an additional modifier to their calculated roll total.
+   - Interpersonal Consequences: Strong Successes (10+) on collaborative assignments increase mutual synergy by +1 (max +3). Weak Successes (7-9) or Operational Misses (6 or less) fray the workshop relationship, reducing the synergy metric by -1 (min -3) as blame or hardware faults strain communication.
+   - Operational Strike: If any pair's synergy reaches -3, they refuse to execute any joint tasks entirely, locking out combined action approaches until the player dedicates a week to resolving the workplace grievance.
 
 # =========================================
 🎨 ART DIRECTION MANIFESTO

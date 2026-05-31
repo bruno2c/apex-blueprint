@@ -154,7 +154,7 @@ h1 {
 
 .crew-roster-row {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 20px;
 }
 
@@ -717,5 +717,90 @@ textarea {
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
 }
+
+/* Synergy Connection Bridge Styling */
+.synergy-bridge-panel {
+    background: var(--panel-nested);
+    border: var(--border-thick);
+    box-shadow: 4px 4px 0px var(--ink-black);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+}
+
+.synergy-header {
+    font-family: "Permanent Marker", cursive;
+    font-size: 14px;
+    color: var(--text-main);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: center;
+}
+
+.synergy-indicator-label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.synergy-indicator-label.active-positive {
+    color: var(--comic-green);
+}
+
+.synergy-indicator-label.active-neutral {
+    color: var(--text-muted);
+}
+
+.synergy-indicator-label.active-negative {
+    color: var(--comic-red);
+}
+
+.synergy-visual-bar {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    align-items: center;
+    margin-top: 4px;
+}
+
+.synergy-block-cell {
+    width: 24px;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: var(--border-thin);
+    border-color: rgba(255, 255, 255, 0.1);
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+/* Positive Synergy Cell Fills */
+.synergy-bridge-panel.active-positive {
+    border-color: var(--comic-green);
+}
+.synergy-block-cell.fill-positive {
+    background-color: var(--comic-green);
+    border-color: var(--ink-black);
+}
+
+/* Neutral Synergy Cell Fills */
+.synergy-bridge-panel.active-neutral {
+    border-color: var(--text-muted);
+}
+.synergy-block-cell.fill-neutral {
+    background-color: var(--text-muted);
+    border-color: var(--ink-black);
+}
+
+/* Negative Synergy Cell Fills */
+.synergy-bridge-panel.active-negative {
+    border-color: var(--comic-red);
+}
+.synergy-block-cell.fill-negative {
+    background-color: var(--comic-red);
+    border-color: var(--ink-black);
+}
+
 
 
