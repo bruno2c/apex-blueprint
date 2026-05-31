@@ -1,0 +1,722 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>🏭 APEX BLUEPRINT // WORKSHOP TERMINAL v8.5</title>
+        <link
+            href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Permanent+Marker&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="css/styles.css" />
+        <script src="js/prompts.js" defer></script>
+        <script src="js/app.js" defer></script>
+    </head>
+    <body>
+        <div id="reauth-banner" style="display: none; background: var(--comic-amber); color: var(--ink-black); border-bottom: var(--border-thick); padding: 12px; font-weight: bold; font-size: 13px; text-align: center; cursor: pointer; position: sticky; top: 0; z-index: 10000;" onclick="window.restoreDirectoryConnection()">
+            ⚠️ CONNECTION SUSPENDED // Click here to re-authorize access to your local folder: <span id="reauth-folder-name" style="text-decoration: underline;"></span>
+        </div>
+        <div class="container">
+            <header style="display: flex; justify-content: space-between; align-items: center; border-bottom: var(--border-thick); padding-bottom: 12px; margin-bottom: 20px;">
+                <div>
+                    <h1 style="margin: 0; font-family: 'Permanent Marker', cursive; font-size: 24px; color: var(--comic-amber); letter-spacing: 1px;">APEX BLUEPRINT // STRATEGIC CONTROL PANEL</h1>
+                    <div class="header-sub" style="margin-top: 4px;">
+                        MANUFACTURING LOGISTICS RUNTIME CORE // COMPLETE UNIVERSE ENGINE v8.5
+                    </div>
+                </div>
+                <button id="btn-exit-menu" class="btn-utility" onclick="window.exitToMainMenu()" style="padding: 6px 12px; font-size: 11px; font-weight: bold; background: var(--panel-nested); border: var(--border-thin); display: none; margin-left: auto;">
+                    🚪 MAIN MENU / SWITCH CAMPAIGN
+                </button>
+            </header>
+
+            <div class="tabs" id="main-navigation-tabs">
+                <button
+                    class="tab-btn"
+                    id="btn-live-dashboard"
+                    onclick="window.switchTab('live-dashboard')"
+                >
+                    🔧 WORKSHOP MONITOR
+                </button>
+                <button
+                    class="tab-btn"
+                    id="btn-storybook-tab"
+                    onclick="window.switchTab('storybook-tab')"
+                >
+                    📖 VISUAL STORYBOOK
+                </button>
+                <button 
+                    class="tab-btn" 
+                    id="btn-init-matrix"
+                    onclick="window.switchTab('init-matrix')"
+                >
+                    📊 CHARACTER CREATOR
+                </button>
+                <button
+                    class="tab-btn"
+                    id="btn-master-manual"
+                    onclick="window.switchTab('master-manual-tab')"
+                >
+                    🎮 AI SESSION INITIALIZER
+                </button>
+                <button
+                    class="tab-btn"
+                    id="btn-config-tab"
+                    onclick="window.switchTab('config-tab')"
+                >
+                    ⚙️ CONFIG & ASSETS
+                </button>
+            </div>
+
+            <!-- =================== WELCOME / MAIN MENU TAB =================== -->
+            <div id="welcome-tab" class="tab-content">
+                <div class="row-section" style="text-align: center; max-width: 600px; margin: 40px auto; padding: 30px; background: var(--panel-nested); border: var(--border-thick); box-shadow: 6px 6px 0px var(--ink-black);">
+                    <div style="font-family: 'Permanent Marker', cursive; font-size: 32px; color: var(--comic-amber); margin-bottom: 12px; letter-spacing: 2px;">
+                        APEX BLUEPRINT
+                    </div>
+                    <div style="font-size: 13px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 30px; letter-spacing: 1px;">
+                        Automotive Garage Simulation Core
+                    </div>
+                    
+                    <button class="btn-submit" onclick="window.startNewCampaignWizard()" style="font-size: 16px; padding: 15px; width: 100%; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px;">
+                        🏁 Create New Campaign
+                    </button>
+                    
+                    <div style="border-top: var(--border-thin); margin: 30px 0; position: relative;">
+                        <span style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #1a1e29; padding: 0 10px; font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">OR RESUME ACTIVATION</span>
+                    </div>
+
+                    <div style="font-size: 12px; font-weight: bold; color: var(--text-main); text-align: left; margin-bottom: 10px; text-transform: uppercase;">
+                        📂 Load Existing Campaign Slot:
+                    </div>
+                    
+                    <div id="welcome-campaign-list" style="display: flex; flex-direction: column; gap: 10px; text-align: left; max-height: 250px; overflow-y: auto; padding-right: 5px; margin-bottom: 20px;">
+                        <!-- Populate dynamic slots -->
+                    </div>
+                    
+                    <div id="welcome-folder-option" style="display: none; border-top: var(--border-thin); padding-top: 15px; margin-top: 15px; text-align: left;">
+                        <div style="font-size: 11px; font-weight: bold; color: var(--comic-amber); margin-bottom: 8px; text-transform: uppercase;">Connected Folder Backup:</div>
+                        <button class="btn-utility" onclick="window.loadCampaignFromConnectedFolder()" style="width: 100%; padding: 10px; font-size: 12px;">
+                            📥 Load campaign_state.json from Local Directory
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="live-dashboard" class="tab-content">
+                <div class="blueprint-dossier">
+                    <span style="color: var(--comic-amber)"
+                        >📋 TARGET DESIGN ENVIRONMENT CONFIGURATION:</span
+                    >
+                    <div
+                        style="
+                            display: grid;
+                            grid-template-columns: repeat(4, 1fr);
+                            gap: 10px;
+                            margin-top: 8px;
+                            color: #fff;
+                        "
+                    >
+                        <div>
+                            • POWERTRAIN:
+                            <span id="lbl-meta-power"
+                                >EV [Electric Vehicle]</span
+                            >
+                        </div>
+                        <div>
+                            • FRAME MARKET:
+                            <span id="lbl-meta-seg">Track Weapon</span>
+                        </div>
+                        <div>
+                            • INITIAL FUNDING:
+                            <span id="lbl-meta-fund">Bootstrapped</span>
+                        </div>
+                        <div>
+                            • IDENTITY PERK:
+                            <span id="lbl-meta-perk">Corporate Dropout</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row-section">
+                    <div class="section-title">📊 COMPANY CURRENT DATA</div>
+                    <div class="company-metrics-grid">
+                        <div class="num-box">
+                            <div class="num-label">
+                                Liquid Operational Capital
+                            </div>
+                            <div class="num-val" id="dash-cash">$120,000</div>
+                        </div>
+                        <div class="num-box">
+                            <div class="num-label">
+                                Current Weekly Burn Rate
+                            </div>
+                            <div
+                                class="num-val"
+                                id="dash-burn"
+                                style="color: var(--comic-red)"
+                            >
+                                $8,000
+                            </div>
+                        </div>
+                        <div class="num-box">
+                            <div class="num-label">
+                                Alpha Assembly Progress (<span
+                                    id="lbl-current-week"
+                                    >W1</span
+                                >)
+                            </div>
+                            <div
+                                class="num-val"
+                                id="txt-proto"
+                                style="color: var(--comic-amber)"
+                            >
+                                0%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row-section">
+                    <div class="section-title">
+                        👥 PERSONNEL ROSTER (CHAR PROFILES)
+                    </div>
+                    <div class="crew-roster-row" id="crew-roster-container">
+                        <!-- Dynamic crew cards will be rendered here -->
+                    </div>
+                </div>
+
+                <div class="split-feed-grid">
+                    <div class="row-section" style="margin-bottom: 0">
+                        <div class="section-title">
+                            📜 OPERATIONAL CHRONICLE (NARRATIVE LOG)
+                        </div>
+                        <ul id="timeline-container" class="ledger-stream">
+                            <li
+                                class="ledger-entry"
+                                style="color: var(--text-muted)"
+                            >
+                                No local logs cached. Start a campaign or sync a
+                                text data delta segment.
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="row-section" style="margin-bottom: 0">
+                        <div class="section-title">
+                            📥 DATA SLATE UTILITY STORAGE
+                        </div>
+                        <textarea
+                            id="delta-input"
+                            placeholder="Drop raw weekly update JSON text blocks here..."
+                        ></textarea>
+                        
+                        <!-- DYNAMIC SCENARIO IMAGE UPLOAD INJECTION PANEL -->
+                        <div style="margin-top: 10px; background: rgba(0,0,0,0.2); padding: 10px; border: var(--border-thin);">
+                            <label style="font-size: 11px; font-weight: bold; color: var(--comic-amber); display: block; margin-bottom: 6px; text-transform: uppercase;">
+                                🖼️ Bind Active Scene Artwork (Optional):
+                            </label>
+                            <input type="file" id="scenario-img-input" accept="image/*" style="font-size: 12px; color: var(--text-main); display: block; margin-bottom: 8px;" />
+                            <div id="dashboard-folder-status" style="font-size: 11px; color: var(--text-muted); line-height: 1.4;">
+                                Checking folder status...
+                            </div>
+                        </div>
+
+                        <button
+                            class="btn-submit"
+                            onclick="window.syncDelta()"
+                            style="margin-top: 12px"
+                        >
+                            TRANSMIT LEDGER UPDATE
+                        </button>
+                        <div class="file-utility-tray">
+                            <button
+                                class="btn-utility"
+                                onclick="window.exportDataSlateJson()"
+                            >
+                                💾 EXPORT DATA SLATE (.JSON)
+                            </button>
+                            <button
+                                class="btn-utility"
+                                onclick="
+                                    document
+                                        .getElementById('file-loader-node')
+                                        .click()
+                                "
+                            >
+                                📁 LOAD DATA SLATE
+                            </button>
+                            <input
+                                type="file"
+                                id="file-loader-node"
+                                style="display: none"
+                                accept=".json"
+                                onchange="window.importDataSlateJson(event)"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STORYBOOK WORKFLOW LAYOUT PANEL TAB CONTAINER -->
+            <div id="storybook-tab" class="tab-content">
+                <div class="row-section">
+                    <div class="section-title">📖 AUTOMOTIVE REVOLUTION RECORDED VISUAL HISTORY</div>
+                    <div id="storybook-container" class="storybook-grid">
+                        <!-- Rendered dynamically by script routines -->
+                    </div>
+                </div>
+            </div>
+
+            <div id="init-matrix" class="tab-content">
+                <div class="row-section">
+                    <div class="section-title">
+                        ⚙️ STARTUP PARAMETERS CONFIGURATION MATRIX
+                    </div>
+                    <table class="form-table">
+                        <tr>
+                            <td
+                                style="
+                                    width: 35%;
+                                    font-size: 13px;
+                                    font-weight: bold;
+                                    color: #fff;
+                                "
+                            >
+                                Powertrain Core Blueprint
+                            </td>
+                            <td>
+                                <select id="p-powertrain">
+                                    <option
+                                        value="EV [Electric Vehicle] (Focus: Lithium Chemistry, BMS, High-Voltage systems)"
+                                    >
+                                        EV (Electric Vehicle Pack Architecture)
+                                    </option>
+                                    <option
+                                        value="ICE [Internal Combustion Engine] (Focus: Compression, Turbos, Fuel Mapping)"
+                                    >
+                                        ICE (Internal Combustion Powertrain
+                                        Block)
+                                    </option>
+                                    <option
+                                        value="H2 [Hydrogen Fuel Cell] (Focus: Platinum Catalysts, Pressure Tanks, Complex Plumbing)"
+                                    >
+                                        H2 (Hydrogen Fuel Cell Engine Matrix)
+                                    </option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td
+                                style="
+                                    font-size: 13px;
+                                    font-weight: bold;
+                                    color: #fff;
+                                "
+                            >
+                                Target Structural Segment
+                            </td>
+                            <td>
+                                <select id="p-segment">
+                                    <option
+                                        value="Track Weapon (Ultra-light, extreme aero, high performance ceiling, niche market)"
+                                    >
+                                        Track Weapon (Aero Track Weapon Sports
+                                        Car)
+                                    </option>
+                                    <option
+                                        value="Urban Commuter (Hyper-efficient micro-car, optimized for scale, thin margins)"
+                                    >
+                                        Urban Commuter (Mass Micro-Car Platform)
+                                    </option>
+                                    <option
+                                        value="Overlander Truck (High-clearance utility workhorse, heavy components, premium markup)"
+                                    >
+                                        Overlander Truck (High Torque Utility
+                                        Workhorse)
+                                    </option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td
+                                style="
+                                    font-size: 13px;
+                                    font-weight: bold;
+                                    color: #fff;
+                                "
+                            >
+                                Capital Vector Pools
+                            </td>
+                            <td>
+                                <select id="p-funding">
+                                    <option
+                                        value="Bootstrapped ($120k Cash, high crew loyalty, extreme personal risk)"
+                                    >
+                                        Bootstrapped Liquid Personal Savings
+                                        ($120k)
+                                    </option>
+                                    <option
+                                        value="Innovation Grant ($250k Cash, restricted by heavy regulatory red-tape and audits)"
+                                    >
+                                        State Innovation Grant Funding
+                                        allocation ($250k)
+                                    </option>
+                                    <option
+                                        value="Shadow Angel ($500k Cash, erratic investor makes unpredictable feature demands)"
+                                    >
+                                        Shadow Angel Private Asset Investor
+                                        ($500k)
+                                    </option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td
+                                style="
+                                    font-size: 13px;
+                                    font-weight: bold;
+                                    color: #fff;
+                                "
+                            >
+                                Architect Backstory Lifepath
+                            </td>
+                            <td>
+                                <select id="p-perk">
+                                    <option
+                                        value="Corporate Dropout (+1 Tech on factory assemblies; Legacy auto executives hold a grudge)"
+                                    >
+                                        Factory Tier-1 Corporate Dropout
+                                    </option>
+                                    <option
+                                        value="Underground Tuner (+10% starting mechanic loyalty; -1 Charisma with state regulators)"
+                                    >
+                                        Grey Market Underground Mechanical Tuner
+                                    </option>
+                                    <option
+                                        value="Academic Prodigy (+1 Forward on software tasks; starting capital reduced by $10k legal debt)"
+                                    >
+                                        University Laboratory Academic Robotics
+                                        Prodigy
+                                    </option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td
+                                style="
+                                    font-size: 13px;
+                                    font-weight: bold;
+                                    color: #fff;
+                                "
+                            >
+                                Facility Structural Drawback (Flaw)
+                            </td>
+                            <td>
+                                <select id="p-flaw">
+                                    <option
+                                        value="Drafty Roof (20% chance tools/components short circuit or rust during rain turns)"
+                                    >
+                                        Drafty Workshop Roof Failure Risks
+                                    </option>
+                                    <option
+                                        value="Anxious Co-Founder (Sarah drops 5% morale/week automatically if capital drops under $20k)"
+                                    >
+                                        Risk-Averse Financial Co-Founder
+                                        Blueprint
+                                    </option>
+                                    <option
+                                        value="Improvised Tooling (+10% material costs due to lack of a precision CNC table)"
+                                    >
+                                        Improvised Manual Tooling Mills & Lathes
+                                    </option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <span
+                                    style="
+                                        font-size: 13px;
+                                        font-weight: bold;
+                                        color: #fff;
+                                        display: block;
+                                    "
+                                    >Matrix Attribute Distribution Nodes</span
+                                >
+                                <div
+                                    style="
+                                        font-size: 11px;
+                                        color: var(--comic-amber);
+                                        margin-top: 4px;
+                                        font-weight: bold;
+                                    "
+                                >
+                                    AVAILABLE CORE CAPACITY:
+                                    <span id="pool-display">4</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div
+                                    style="
+                                        display: grid;
+                                        grid-template-columns: repeat(2, 1fr);
+                                        gap: 12px;
+                                    "
+                                >
+                                    <div
+                                        style="
+                                            display: flex;
+                                            justify-content: space-between;
+                                            align-items: center;
+                                        "
+                                    >
+                                        <span>TECH Nodes: </span>
+                                        <div class="counter-group">
+                                            <button
+                                                class="btn-square"
+                                                onclick="window.adjustStat('tech', -1)"
+                                            >
+                                                -</button
+                                            ><span
+                                                id="v-tech"
+                                                style="
+                                                    width: 15px;
+                                                    text-align: center;
+                                                "
+                                                >2</span
+                                            ><button
+                                                class="btn-square"
+                                                onclick="window.adjustStat('tech', 1)"
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div
+                                        style="
+                                            display: flex;
+                                            justify-content: space-between;
+                                            align-items: center;
+                                        "
+                                    >
+                                        <span>CHA Nodes: </span>
+                                        <div class="counter-group">
+                                            <button
+                                                class="btn-square"
+                                                onclick="window.adjustStat('cha', -1)"
+                                            >
+                                                -</button
+                                            ><span
+                                                id="v-cha"
+                                                style="
+                                                    width: 15px;
+                                                    text-align: center;
+                                                "
+                                                >2</span
+                                            ><button
+                                                class="btn-square"
+                                                onclick="window.adjustStat('cha', 1)"
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div
+                                        style="
+                                            display: flex;
+                                            justify-content: space-between;
+                                            align-items: center;
+                                        "
+                                    >
+                                        <span>LOG Nodes: </span>
+                                        <div class="counter-group">
+                                            <button
+                                                class="btn-square"
+                                                onclick="window.adjustStat('log', -1)"
+                                            >
+                                                -</button
+                                            ><span
+                                                id="v-log"
+                                                style="
+                                                    width: 15px;
+                                                    text-align: center;
+                                                "
+                                                >2</span
+                                            ><button
+                                                class="btn-square"
+                                                onclick="window.adjustStat('log', 1)"
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div
+                                        style="
+                                            display: flex;
+                                            justify-content: space-between;
+                                            align-items: center;
+                                        "
+                                    >
+                                        <span>PER Nodes: </span>
+                                        <div class="counter-group">
+                                            <button
+                                                class="btn-square"
+                                                onclick="window.adjustStat('per', -1)"
+                                            >
+                                                -</button
+                                            ><span
+                                                id="v-per"
+                                                style="
+                                                    width: 15px;
+                                                    text-align: center;
+                                                "
+                                                >2</span
+                                            ><button
+                                                class="btn-square"
+                                                onclick="window.adjustStat('per', 1)"
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                    <div style="margin-top: 24px">
+                        <label
+                            style="
+                                color: #fff;
+                                font-weight: bold;
+                                margin-bottom: 8px;
+                                display: block;
+                            "
+                            >DYNAMIC ENGINE SYSTEM PROMPT CODESTREAM</label
+                        >
+                        <textarea
+                            id="prompt-output"
+                            readonly
+                            style="height: 100px"
+                            placeholder="Finalize parameters to compile framework profiles..."
+                        ></textarea>
+                        <button
+                            class="btn-submit"
+                            onclick="window.compileMasterPrompt()"
+                        >
+                            COMPILE TARGET TIMELINE PROMPT
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="master-manual-tab" class="tab-content">
+                <div class="row-section">
+                    <div class="section-title">
+                        🎮 CORE GAME PROTOCOL INSTRUMENT
+                    </div>
+                    <p
+                        style="
+                            font-size: 13px;
+                            margin: 0 0 16px 0;
+                            color: var(--text-muted);
+                        "
+                    >
+                        When spinning up a new session or resuming the campaign in an empty AI chat window, copy and paste this **merged instruction prompt** (containing Core System Rules + Active Campaign State Payload).
+                    </p>
+
+                    <textarea
+                        id="manual-prompt-node"
+                        class="rulebook-text"
+                        readonly
+                    ></textarea>
+                <button class="btn-submit" onclick="window.copyManualPrompt()">
+                    📋 COPY OPERATIONAL RULEBOOK PROMPT
+                </button>
+            </div>
+        </div>
+
+        <!-- =================== CONFIG TAB =================== -->
+        <div id="config-tab" class="tab-content">
+            <div class="row-section">
+                <div class="section-title">⚙️ LOCAL SETTINGS & ASSETS MANAGER</div>
+                
+                <!-- Connection Status Card -->
+                <div style="background: var(--panel-nested); border: var(--border-thick); box-shadow: 4px 4px 0px var(--ink-black); padding: 20px; margin-bottom: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                        <div>
+                            <div style="font-size: 11px; font-weight: bold; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Directory Access Status</div>
+                            <div id="dir-status-text" style="font-family: 'Permanent Marker', cursive; font-size: 20px; letter-spacing: 1px;">LOADING...</div>
+                            <div id="dir-folder-name" style="font-size: 12px; margin-top: 4px; color: var(--text-main);">Scanning database...</div>
+                        </div>
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                            <button id="btn-manual-backup" class="btn-submit" style="margin-top: 0; padding: 10px 20px; font-size: 14px; background: var(--panel-nested); color: #fff; display: none;" onclick="window.triggerManualBackup()">
+                                💾 CREATE CAMPAIGN BACKUP
+                            </button>
+                            <button id="btn-connect-dir" class="btn-submit" style="margin-top: 0; padding: 10px 20px; font-size: 14px;" onclick="window.toggleDirectoryConnection()">
+                                📁 CONNECT LOCAL DIRECTORY
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Asset Naming convention details -->
+                <div class="blueprint-dossier" style="margin-bottom: 24px;">
+                    <span style="color: var(--comic-amber)">📋 EXPECTED ASSET NAMING STRUCTURE:</span>
+                    <p style="margin: 8px 0 0 0; line-height: 1.5;">
+                        To organize your local campaign assets, connect a local directory. The system will automatically create and use:
+                    </p>
+                    <ul style="margin: 6px 0 0 0; padding-left: 20px; line-height: 1.5;">
+                        <li>📂 <strong style="color: #fff;">backups/</strong> folder: contains rolling and archive JSON slates (e.g. <span style="color: var(--comic-green)">backups/campaign_state.json</span>).</li>
+                        <li>📂 <strong style="color: #fff;">storybook/</strong> folder: contains weekly illustrations with the naming convention <span style="color: var(--comic-green)">storybook/storybook_week_{week}.png</span>.</li>
+                    </ul>
+                </div>
+
+                <!-- Campaign Asset Tracker Table -->
+                <div style="background: var(--panel-nested); border: var(--border-thick); box-shadow: 4px 4px 0px var(--ink-black); padding: 16px; overflow-x: auto;">
+                    <div style="font-size: 12px; font-weight: bold; color: var(--comic-amber); margin-bottom: 12px; text-transform: uppercase;">
+                        📅 Campaign Week Asset Tracker
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--ink-black); color: var(--text-muted);">
+                                <th style="padding: 10px;">Week</th>
+                                <th style="padding: 10px;">Expected Filename</th>
+                                <th style="padding: 10px;">JSON Tracking</th>
+                                <th style="padding: 10px;">Local Folder Status</th>
+                                <th style="padding: 10px; text-align: center;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="asset-tracker-body">
+                            <!-- Populated dynamically by app.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="toast-layer" class="toast-overlay">
+        <div
+            style="font-weight: bold; color: var(--comic-amber)"
+            id="toast-title"
+        >
+            ⚙️ REGISTRY:
+        </div>
+        <div id="toast-msg" style="font-size: 13px">Online.</div>
+    </div>
+
+    <!-- BLUEPRINT FULLSCREEN REVIEW LIGHTBOX -->
+    <div id="blueprint-lightbox-modal" class="blueprint-lightbox" onclick="if(event.target === this) window.closeLightbox()">
+        <div class="lightbox-content-container">
+            <button class="lightbox-close-btn" onclick="window.closeLightbox()">❌ CLOSE REVIEW</button>
+            <div class="lightbox-img-wrapper">
+                <img id="lightbox-img-node" class="lightbox-img" src="" alt="Blueprint Detail" />
+            </div>
+            <div class="lightbox-caption-card">
+                <div id="lightbox-title-node" class="lightbox-title">WEEK 00 ASSEMBLY</div>
+                <p id="lightbox-desc-node" class="lightbox-desc">Detailed logs...</p>
+            </div>
+        </div>
+    </div>
+</body>
