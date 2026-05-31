@@ -10,7 +10,15 @@
         />
         <link rel="stylesheet" href="css/styles.css" />
         <script src="js/prompts.js" defer></script>
-        <script src="js/app.js" defer></script>
+        <script src="js/state.js" defer></script>
+        <script src="js/ui.js" defer></script>
+        <script src="js/charts.js" defer></script>
+        <script src="js/crop.js" defer></script>
+        <script src="js/directory.js" defer></script>
+        <script src="js/render.js" defer></script>
+        <script src="js/sync.js" defer></script>
+        <script src="js/campaign.js" defer></script>
+        <script src="js/init.js" defer></script>
     </head>
     <body>
         <div id="reauth-banner" style="display: none; background: var(--comic-amber); color: var(--ink-black); border-bottom: var(--border-thick); padding: 12px; font-weight: bold; font-size: 13px; text-align: center; cursor: pointer; position: sticky; top: 0; z-index: 10000;" onclick="window.restoreDirectoryConnection()">
@@ -33,6 +41,7 @@
                 <button
                     class="tab-btn"
                     id="btn-live-dashboard"
+                    data-tab="live-dashboard"
                     onclick="window.switchTab('live-dashboard')"
                 >
                     🔧 WORKSHOP MONITOR
@@ -40,6 +49,7 @@
                 <button
                     class="tab-btn"
                     id="btn-analytics-tab"
+                    data-tab="analytics-tab"
                     onclick="window.switchTab('analytics-tab')"
                 >
                     📈 ANALYTICS
@@ -47,13 +57,15 @@
                 <button
                     class="tab-btn"
                     id="btn-storybook-tab"
+                    data-tab="storybook-tab"
                     onclick="window.switchTab('storybook-tab')"
                 >
                     📖 VISUAL STORYBOOK
                 </button>
-                <button 
-                    class="tab-btn" 
+                <button
+                    class="tab-btn"
                     id="btn-init-matrix"
+                    data-tab="init-matrix"
                     onclick="window.switchTab('init-matrix')"
                 >
                     📊 CHARACTER CREATOR
@@ -61,6 +73,7 @@
                 <button
                     class="tab-btn"
                     id="btn-master-manual"
+                    data-tab="master-manual-tab"
                     onclick="window.switchTab('master-manual-tab')"
                 >
                     🎮 AI SESSION INITIALIZER
@@ -68,6 +81,7 @@
                 <button
                     class="tab-btn"
                     id="btn-rolodex-tab"
+                    data-tab="rolodex-tab"
                     onclick="window.switchTab('rolodex-tab')"
                 >
                     📋 TEAM ROLODEX
@@ -75,6 +89,7 @@
                 <button
                     class="tab-btn"
                     id="btn-config-tab"
+                    data-tab="config-tab"
                     onclick="window.switchTab('config-tab')"
                 >
                     ⚙️ CONFIG & ASSETS

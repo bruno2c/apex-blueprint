@@ -278,7 +278,7 @@ textarea {
 }
 .btn-square:hover {
     background: var(--comic-amber);
-    color: #00;
+    color: #000000;
 }
 
 .btn-submit {

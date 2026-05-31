@@ -4,20 +4,33 @@ A strategic control panel interface for the PbtA (Powered by the Apocalypse) sim
 
 ## Project Structure
 
-This project has been modularized to separate concern logic, stylesheet configuration, and asset management:
+This project is organized into focused modules — each file has a single clear responsibility:
 
 ```
 ├── css/
-│   └── styles.css          # Core visual theme stylesheet (Indie Cyberpunk Novel aesthetic)
+│   └── styles.css              # Core visual theme (Indie Cyberpunk Graphic Novel aesthetic)
 ├── js/
-│   ├── prompts.js          # Tabletop RPG GM system rules prompt and templates
-│   └── app.js              # Application state, event hooks, and DOM controllers
+│   ├── prompts.js              # GM system rules prompt loader & template engine
+│   ├── state.js                # Game state, localStorage persistence, sanity helpers
+│   ├── ui.js                   # UI primitives: toast, tab routing, lightbox, stat counters
+│   ├── charts.js               # SVG analytics chart generation
+│   ├── crop.js                 # Avatar image crop tool (self-contained)
+│   ├── directory.js            # File System Access API & IndexedDB handle persistence
+│   ├── render.js               # All DOM rendering functions (dashboard, crew, rolodex, etc.)
+│   ├── sync.js                 # Delta sync, JSON export & import
+│   ├── campaign.js             # Campaign lifecycle, prompt compilation, app state machine
+│   └── init.js                 # DOMContentLoaded bootstrap
 ├── images/
-│   ├── leo_avatar.png      # Crew avatar assets
-│   ├── lucius_avatar.png   
-│   └── sarah_avatar.png    
-├── index.html              # Main terminal template
-└── README.md               # Project documentation
+│   ├── leo_avatar.png          # Crew avatar assets
+│   ├── lucius_avatar.png
+│   └── sarah_avatar.png
+├── prompts/
+│   ├── system_rules.md         # PbtA GM system rules (loaded via HTTP; fallback inline)
+│   ├── dynamic_template.md     # Session state payload template
+│   └── char_img_creation.md   # Character image generation prompt reference
+├── index.html                  # Main terminal template
+├── WIKI.md                     # Gameplay manual & mechanics reference
+└── README.md                   # Project documentation
 ```
 
 ## Running the Application
