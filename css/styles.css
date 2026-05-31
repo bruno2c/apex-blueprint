@@ -652,3 +652,62 @@ textarea {
     pointer-events: none;
 }
 
+/* Custom checkbox styling to match comic book blueprint aesthetic */
+.custom-checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 11px;
+    color: var(--text-main);
+}
+
+.custom-checkbox-container input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.custom-checkbox-checkmark {
+    height: 16px;
+    width: 16px;
+    background-color: var(--panel-nested);
+    border: var(--border-thick);
+    position: relative;
+    flex-shrink: 0;
+    transition: background-color 0.1s;
+}
+
+.custom-checkbox-container:hover input ~ .custom-checkbox-checkmark {
+    background-color: var(--panel-bg);
+}
+
+.custom-checkbox-container input:checked ~ .custom-checkbox-checkmark {
+    background-color: var(--comic-amber);
+}
+
+.custom-checkbox-checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+.custom-checkbox-container input:checked ~ .custom-checkbox-checkmark:after {
+    display: block;
+}
+
+.custom-checkbox-container .custom-checkbox-checkmark:after {
+    left: 3px;
+    top: 0px;
+    width: 4px;
+    height: 8px;
+    border: solid var(--ink-black);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+

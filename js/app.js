@@ -741,7 +741,22 @@ window.syncDelta = function() {
         if (delta.protoProgress !== undefined) window.state.protoProgress = delta.protoProgress;
         if (delta.meta) window.state.meta = { ...(window.state.meta || {}), ...delta.meta };
         if (delta.facility_modifiers) window.state.facility_modifiers = { ...(window.state.facility_modifiers || {}), ...delta.facility_modifiers };
-        if (delta.chronicle !== undefined) window.state.chronicle = delta.chronicle;
+        if (delta.chronicle !== undefined) {
+            const chkOverwrite = document.getElementById("chk-overwrite-chronicle");
+            const shouldOverwrite = chkOverwrite ? chkOverwrite.checked : false;
+            
+            if (shouldOverwrite) {
+                window.state.chronicle = delta.chronicle;
+            } else {
+                if (!window.state.chronicle) window.state.chronicle = [];
+                const existing = new Set(window.state.chronicle);
+                for (const entry of delta.chronicle) {
+                    if (!existing.has(entry)) {
+                        window.state.chronicle.push(entry);
+                    }
+                }
+            }
+        }
         if (delta.storybook_images !== undefined) window.state.storybook_images = delta.storybook_images;
 
         if (!window.state.personnel) window.state.personnel = {};
