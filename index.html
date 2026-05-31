@@ -72,14 +72,6 @@
                 </button>
                 <button
                     class="tab-btn"
-                    id="btn-master-manual"
-                    data-tab="master-manual-tab"
-                    onclick="window.switchTab('master-manual-tab')"
-                >
-                    🎮 AI SESSION INITIALIZER
-                </button>
-                <button
-                    class="tab-btn"
                     id="btn-rolodex-tab"
                     data-tab="rolodex-tab"
                     onclick="window.switchTab('rolodex-tab')"
@@ -263,31 +255,6 @@
                         >
                             TRANSMIT LEDGER UPDATE
                         </button>
-                        <div class="file-utility-tray">
-                            <button
-                                class="btn-utility"
-                                onclick="window.exportDataSlateJson()"
-                            >
-                                💾 EXPORT DATA SLATE (.JSON)
-                            </button>
-                            <button
-                                class="btn-utility"
-                                onclick="
-                                    document
-                                        .getElementById('file-loader-node')
-                                        .click()
-                                "
-                            >
-                                📁 LOAD DATA SLATE
-                            </button>
-                            <input
-                                type="file"
-                                id="file-loader-node"
-                                style="display: none"
-                                accept=".json"
-                                onchange="window.importDataSlateJson(event)"
-                            />
-                        </div>
                     </div>
                 </div>
             </div>
@@ -665,32 +632,6 @@
                 </div>
             </div>
 
-            <div id="master-manual-tab" class="tab-content">
-                <div class="row-section">
-                    <div class="section-title">
-                        🎮 CORE GAME PROTOCOL INSTRUMENT
-                    </div>
-                    <p
-                        style="
-                            font-size: 13px;
-                            margin: 0 0 16px 0;
-                            color: var(--text-muted);
-                        "
-                    >
-                        When spinning up a new session or resuming the campaign in an empty AI chat window, copy and paste this **merged instruction prompt** (containing Core System Rules + Active Campaign State Payload).
-                    </p>
-
-                    <textarea
-                        id="manual-prompt-node"
-                        class="rulebook-text"
-                        readonly
-                    ></textarea>
-                <button class="btn-submit" onclick="window.copyManualPrompt()">
-                    📋 COPY OPERATIONAL RULEBOOK PROMPT
-                </button>
-            </div>
-        </div>
-
         <!-- =================== TEAM ROLODEX TAB =================== -->
         <div id="rolodex-tab" class="tab-content">
             <div class="row-section">
@@ -708,6 +649,23 @@
 
         <!-- =================== CONFIG TAB =================== -->
         <div id="config-tab" class="tab-content">
+            <div class="row-section">
+                <div class="section-title">
+                    🎮 AI SESSION INITIALIZER
+                </div>
+                <p style="font-size: 13px; margin: 0 0 16px 0; color: var(--text-muted);">
+                    When spinning up a new session or resuming the campaign in an empty AI chat window, copy and paste this merged instruction prompt (Core System Rules + Active Campaign State).
+                </p>
+                <textarea
+                    id="manual-prompt-node"
+                    class="rulebook-text"
+                    readonly
+                ></textarea>
+                <button class="btn-submit" onclick="window.copyManualPrompt()" style="margin-bottom: 0;">
+                    📋 COPY OPERATIONAL RULEBOOK PROMPT
+                </button>
+            </div>
+
             <div class="row-section">
                 <div class="section-title">⚙️ LOCAL SETTINGS & ASSETS MANAGER</div>
                 
@@ -728,6 +686,17 @@
                             </button>
                         </div>
                     </div>
+                </div>
+
+                <!-- Data Slate Import / Export -->
+                <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px;">
+                    <button class="btn-utility" onclick="window.exportDataSlateJson()" style="flex: 1; padding: 10px; font-size: 12px; font-weight: bold;">
+                        💾 EXPORT DATA SLATE (.JSON)
+                    </button>
+                    <button class="btn-utility" onclick="document.getElementById('file-loader-node').click()" style="flex: 1; padding: 10px; font-size: 12px; font-weight: bold;">
+                        📁 LOAD DATA SLATE (.JSON)
+                    </button>
+                    <input type="file" id="file-loader-node" style="display: none" accept=".json" onchange="window.importDataSlateJson(event)" />
                 </div>
 
                 <!-- Asset Naming convention details -->

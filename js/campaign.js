@@ -18,7 +18,6 @@ window.setAppState = function(appState) {
     const btnLive   = document.getElementById("btn-live-dashboard");
     const btnStory  = document.getElementById("btn-storybook-tab");
     const btnInit   = document.getElementById("btn-init-matrix");
-    const btnManual = document.getElementById("btn-master-manual");
     const btnConfig = document.getElementById("btn-config-tab");
 
     document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
@@ -39,7 +38,6 @@ window.setAppState = function(appState) {
                 btnInit.style.display = "inline-block";
                 btnInit.innerText = "📊 CHARACTER CREATOR";
             }
-            if (btnManual) btnManual.style.display = "none";
             if (btnConfig) btnConfig.style.display = "inline-block";
         }
         if (btnExit) btnExit.style.display = "inline-block";
@@ -51,10 +49,6 @@ window.setAppState = function(appState) {
             if (btnLive)   btnLive.style.display   = "inline-block";
             if (btnStory)  btnStory.style.display  = "inline-block";
             if (btnInit)   btnInit.style.display   = "none";
-            if (btnManual) {
-                btnManual.style.display = "inline-block";
-                btnManual.innerText = "🎮 AI SESSION INITIALIZER";
-            }
             if (btnConfig) btnConfig.style.display = "inline-block";
         }
         if (btnExit) btnExit.style.display = "inline-block";
@@ -178,7 +172,7 @@ window.compileMasterPrompt = function() {
     }
 
     window.setAppState("game");
-    window.switchTab("master-manual-tab");
+    window.switchTab("config-tab");
     window.triggerToast("📋 RULES & TIMELINE COMPILED", "Unified Game Master initial instructions copied to clipboard.");
 
     window.autosaveBackupToLocalDirectory();

@@ -44,7 +44,7 @@ window.renderStateToDashboard = function() {
     const timelineBox = document.getElementById("timeline-container");
     if (timelineBox) {
         if (window.state && window.state.chronicle && window.state.chronicle.length > 0) {
-            timelineBox.innerHTML = window.state.chronicle
+            timelineBox.innerHTML = [...window.state.chronicle].reverse()
                 .map((item) => `<li class="ledger-entry">${item}</li>`)
                 .join("");
         } else {
@@ -279,8 +279,9 @@ window.renderStorybookView = async function() {
         return;
     }
 
-    // Phase 1: render skeleton cards immediately
-    storybookBox.innerHTML = window.state.chronicle.map((logString, index) => {
+    // Phase 1: render skeleton cards immediately (reversed — latest week first)
+    const reversedChronicle = [...window.state.chronicle].reverse();
+    storybookBox.innerHTML = reversedChronicle.map((logString, index) => {
         const matchPattern = logString.match(/^W(\d+(?:-W?\d+)?):/i);
         const rawWeek = matchPattern ? matchPattern[1] : null;
 
@@ -306,9 +307,9 @@ window.renderStorybookView = async function() {
         `;
     }).join("");
 
-    // Phase 2: load images asynchronously
-    for (let index = 0; index < window.state.chronicle.length; index++) {
-        const logString = window.state.chronicle[index];
+    // Phase 2: load images asynchronously (use same reversed array for index consistency)
+    for (let index = 0; index < reversedChronicle.length; index++) {
+        const logString = reversedChronicle[index];
         const matchPattern = logString.match(/^W(\d+(?:-W?\d+)?):/i);
         const rawWeek = matchPattern ? matchPattern[1] : null;
 
