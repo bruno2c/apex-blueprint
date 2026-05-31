@@ -233,7 +233,29 @@ window.updateCharacterUIPanels = function() {
     container.innerHTML = html;
 };
 
+window.expandChronicleRanges = function(chronicle) {
+    if (!chronicle) return [];
+    const expanded = [];
+    for (const entry of chronicle) {
+        const rangeMatch = entry.match(/^W(\d+)-W?(\d+):(.*)$/i);
+        if (rangeMatch) {
+            const start = parseInt(rangeMatch[1], 10);
+            const end = parseInt(rangeMatch[2], 10);
+            const content = rangeMatch[3];
+            for (let w = start; w <= end; w++) {
+                expanded.push(`W${w}:${content}`);
+            }
+        } else {
+            expanded.push(entry);
+        }
+    }
+    return expanded;
+};
+
 window.renderStateToDashboard = function() {
+    if (window.state && window.state.chronicle) {
+        window.state.chronicle = window.expandChronicleRanges(window.state.chronicle);
+    }
     const cash = window.state.cash !== undefined ? formatCurrency(window.state.cash) : "0";
     const burn = window.state.burn !== undefined ? formatCurrency(window.state.burn) : "0";
     const progress = window.state.protoProgress !== undefined ? window.state.protoProgress : "0";
