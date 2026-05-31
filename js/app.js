@@ -778,7 +778,10 @@ window.loadCampaignFromConnectedFolder = async function() {
         }
     } catch (e) {
         console.error("Folder import failed:", e);
-        window.triggerToast("🚨 IMPORT FAILED", "Could not find or parse campaign_state.json backup in directory.");
+        const errMsg = e instanceof SyntaxError 
+            ? "The campaign_state.json file contains invalid JSON syntax."
+            : "Could not find or parse campaign_state.json backup in directory.";
+        window.triggerToast("🚨 IMPORT FAILED", errMsg);
     }
 };
 
@@ -1189,7 +1192,12 @@ window.restoreDirectoryConnection = async function() {
                     }
                 }
             } catch (backupErr) {
-                console.log("No backup file campaign_state.json found in backups/ folder.");
+                if (backupErr instanceof SyntaxError) {
+                    window.triggerToast("🚨 CORRUPT BACKUP", "The campaign_state.json file contains invalid JSON formatting/syntax errors.");
+                    console.error("campaign_state.json JSON parse error:", backupErr);
+                } else {
+                    console.log("No backup file campaign_state.json found in backups/ folder.");
+                }
             }
 
             window.renderStateToDashboard();
@@ -1343,7 +1351,12 @@ window.addEventListener("DOMContentLoaded", () => {
                             }
                         }
                     } catch (backupErr) {
-                        console.log("No initial campaign_state.json backup found in backups/ folder.");
+                        if (backupErr instanceof SyntaxError) {
+                            window.triggerToast("🚨 CORRUPT BACKUP", "The campaign_state.json file contains invalid JSON formatting/syntax errors.");
+                            console.error("campaign_state.json JSON parse error:", backupErr);
+                        } else {
+                            console.log("No initial campaign_state.json backup found in backups/ folder.");
+                        }
                     }
                 } else {
                     window.directoryStatus = "Re-auth Required";
