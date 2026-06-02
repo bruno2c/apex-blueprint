@@ -221,12 +221,27 @@
                 <div class="row-section" id="facility-infrastructure-section" style="display: none;">
                     <div class="section-title">🏭 WORKSHOP INFRASTRUCTURE & UTILITIES</div>
                     
-                    <!-- Environmental/Utility Grid Gauges -->
-                    <div style="font-size: 12px; font-weight: bold; color: var(--comic-amber); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px;">
-                        ⚡ ENVIRONMENTAL POWER & GRID UTILITIES
-                    </div>
-                    <div id="environmental-grid-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                        <!-- Environmental gauges render here -->
+                    <!-- Layout Grid for Carousel & Gauges -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 24px; align-items: start;">
+                        <!-- Facility Blueprint Schematic Carousel -->
+                        <div>
+                            <div style="font-size: 12px; font-weight: bold; color: var(--comic-amber); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px;">
+                                🗺️ WORKSHOP BLUEPRINT SCHEMATIC
+                            </div>
+                            <div id="facility-carousel-container" style="display: flex; justify-content: center;">
+                                <!-- Facility Carousel renders here -->
+                            </div>
+                        </div>
+
+                        <!-- Environmental/Utility Grid Gauges -->
+                        <div>
+                            <div style="font-size: 12px; font-weight: bold; color: var(--comic-amber); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px;">
+                                ⚡ ENVIRONMENTAL POWER & GRID UTILITIES
+                            </div>
+                            <div id="environmental-grid-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+                                <!-- Environmental gauges render here -->
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Infrastructure Nodes -->
