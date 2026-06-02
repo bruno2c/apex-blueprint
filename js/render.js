@@ -507,7 +507,7 @@ window.renderConfigView = function() {
             facilityLocalColor = "var(--comic-red)";
         }
 
-        return [
+        const rows = [
             `
             <tr>
                 <td style="font-weight: bold; color: var(--comic-amber)">Week ${parsedWeek} (Scene)</td>
@@ -520,8 +520,14 @@ window.renderConfigView = function() {
                     </button>
                 </td>
             </tr>
-            `,
             `
+        ];
+
+        const isCurrentWeek = parseInt(parsedWeek) === parseInt(window.state.week);
+        const facilityExists = (isFacilityTracked === "Tracked" || facilityLocalStatus === "Found in Folder");
+
+        if (isCurrentWeek || facilityExists) {
+            rows.push(`
             <tr>
                 <td style="font-weight: bold; color: var(--comic-amber)">Week ${parsedWeek} (Layout)</td>
                 <td style="font-family: 'JetBrains Mono', monospace; font-size: 11px;">facility/${facilityName}</td>
@@ -533,8 +539,10 @@ window.renderConfigView = function() {
                     </button>
                 </td>
             </tr>
-            `
-        ];
+            `);
+        }
+
+        return rows;
     }).join("");
 };
 
@@ -793,12 +801,39 @@ window.renderFacilityCarousel = function() {
         return;
     }
 
-    // Default to the current/last week if not set or out of bounds
-    if (window.facilityCarouselWeek === null || window.facilityCarouselWeek < 1 || window.facilityCarouselWeek > window.state.week) {
-        window.facilityCarouselWeek = window.state.week;
+    // Get list of all weeks that actually have facility images
+    const activeWeeks = [];
+    if (window.state.facility_images) {
+        for (const w of Object.keys(window.state.facility_images)) {
+            const num = parseInt(w);
+            if (!isNaN(num) && !activeWeeks.includes(num)) activeWeeks.push(num);
+        }
+    }
+    if (window.localFacilityFilesMap) {
+        for (const [w, exists] of Object.entries(window.localFacilityFilesMap)) {
+            if (exists) {
+                const num = parseInt(w);
+                if (!isNaN(num) && !activeWeeks.includes(num)) activeWeeks.push(num);
+            }
+        }
+    }
+    activeWeeks.sort((a, b) => a - b);
+
+    // If activeWeeks is empty, default to the current week
+    if (activeWeeks.length === 0) {
+        activeWeeks.push(window.state.week);
+    }
+
+    // Default to the last uploaded/available week
+    if (window.facilityCarouselWeek === null || !activeWeeks.includes(window.facilityCarouselWeek)) {
+        window.facilityCarouselWeek = activeWeeks[activeWeeks.length - 1];
     }
 
     const currentSlideWeek = window.facilityCarouselWeek;
+    const currentIndex = activeWeeks.indexOf(currentSlideWeek);
+
+    const prevWeek = currentIndex > 0 ? activeWeeks[currentIndex - 1] : null;
+    const nextWeek = currentIndex < activeWeeks.length - 1 ? activeWeeks[currentIndex + 1] : null;
 
     container.innerHTML = `
         <div style="width: 100%; max-width: 600px; border: var(--border-thick); background: var(--panel-nested); box-shadow: 4px 4px 0px var(--ink-black); position: relative; overflow: hidden; display: flex; flex-direction: column;">
@@ -810,11 +845,11 @@ window.renderFacilityCarousel = function() {
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--panel-bg); border-top: var(--border-thin); gap: 10px;">
                 <button 
                     class="btn-utility" 
-                    style="padding: 4px 12px; font-size: 11px; font-weight: bold; background: ${currentSlideWeek > 1 ? 'var(--comic-amber)' : 'rgba(0,0,0,0.2)'}; color: ${currentSlideWeek > 1 ? 'var(--ink-black)' : 'var(--text-muted)'}; border: var(--border-thin);"
+                    style="padding: 4px 12px; font-size: 11px; font-weight: bold; background: ${prevWeek !== null ? 'var(--comic-amber)' : 'rgba(0,0,0,0.2)'}; color: ${prevWeek !== null ? 'var(--ink-black)' : 'var(--text-muted)'}; border: var(--border-thin);"
                     onclick="window.changeFacilityCarouselWeek(-1)"
-                    ${currentSlideWeek > 1 ? '' : 'disabled'}
+                    ${prevWeek !== null ? '' : 'disabled'}
                 >
-                    ◀ PREV WEEK
+                    ◀ PREV IMAGE
                 </button>
                 <div style="text-align: center;">
                     <div style="font-family: 'Permanent Marker', cursive; font-size: 14px; color: #fff;">WEEK ${currentSlideWeek < 10 ? '0' + currentSlideWeek : currentSlideWeek} LAYOUT</div>
@@ -822,11 +857,11 @@ window.renderFacilityCarousel = function() {
                 </div>
                 <button 
                     class="btn-utility" 
-                    style="padding: 4px 12px; font-size: 11px; font-weight: bold; background: ${currentSlideWeek < window.state.week ? 'var(--comic-amber)' : 'rgba(0,0,0,0.2)'}; color: ${currentSlideWeek < window.state.week ? 'var(--ink-black)' : 'var(--text-muted)'}; border: var(--border-thin);"
+                    style="padding: 4px 12px; font-size: 11px; font-weight: bold; background: ${nextWeek !== null ? 'var(--comic-amber)' : 'rgba(0,0,0,0.2)'}; color: ${nextWeek !== null ? 'var(--ink-black)' : 'var(--text-muted)'}; border: var(--border-thin);"
                     onclick="window.changeFacilityCarouselWeek(1)"
-                    ${currentSlideWeek < window.state.week ? '' : 'disabled'}
+                    ${nextWeek !== null ? '' : 'disabled'}
                 >
-                    NEXT WEEK ▶
+                    NEXT IMAGE ▶
                 </button>
             </div>
         </div>
@@ -865,9 +900,36 @@ window.renderFacilityCarousel = function() {
 
 window.changeFacilityCarouselWeek = function(delta) {
     if (!window.state || !window.state.week) return;
-    const targetWeek = (window.facilityCarouselWeek || window.state.week) + delta;
-    if (targetWeek >= 1 && targetWeek <= window.state.week) {
-        window.facilityCarouselWeek = targetWeek;
+
+    const activeWeeks = [];
+    if (window.state.facility_images) {
+        for (const w of Object.keys(window.state.facility_images)) {
+            const num = parseInt(w);
+            if (!isNaN(num) && !activeWeeks.includes(num)) activeWeeks.push(num);
+        }
+    }
+    if (window.localFacilityFilesMap) {
+        for (const [w, exists] of Object.entries(window.localFacilityFilesMap)) {
+            if (exists) {
+                const num = parseInt(w);
+                if (!isNaN(num) && !activeWeeks.includes(num)) activeWeeks.push(num);
+            }
+        }
+    }
+    activeWeeks.sort((a, b) => a - b);
+
+    if (activeWeeks.length === 0) {
+        activeWeeks.push(window.state.week);
+    }
+
+    if (window.facilityCarouselWeek === null || !activeWeeks.includes(window.facilityCarouselWeek)) {
+        window.facilityCarouselWeek = activeWeeks[activeWeeks.length - 1];
+    }
+
+    const currentIndex = activeWeeks.indexOf(window.facilityCarouselWeek);
+    const targetIndex = currentIndex + delta;
+    if (targetIndex >= 0 && targetIndex < activeWeeks.length) {
+        window.facilityCarouselWeek = activeWeeks[targetIndex];
         window.renderFacilityCarousel();
     }
 };
