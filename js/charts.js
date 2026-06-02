@@ -117,22 +117,22 @@ function _buildChartSvg(config) {
 // ---------------------------------------------------------------------------
 window.renderAnalyticsView = function() {
     const cashContainer = document.getElementById("cash-chart-container");
-    const progressContainer = document.getElementById("progress-chart-container");
-    if (!cashContainer || !progressContainer) return;
+    const burnContainer = document.getElementById("burn-chart-container");
+    if (!cashContainer || !burnContainer) return;
 
     const history = window.state ? (window.state.history || []) : [];
     if (history.length === 0) {
         cashContainer.innerHTML = `<div class="chart-fallback">Record weekly updates to plot analytics.</div>`;
-        progressContainer.innerHTML = `<div class="chart-fallback">Record weekly updates to plot analytics.</div>`;
+        burnContainer.innerHTML = `<div class="chart-fallback">Record weekly updates to plot analytics.</div>`;
         return;
     }
 
     cashContainer.innerHTML = window.generateCashChartSvg(history);
-    progressContainer.innerHTML = window.generateProgressChartSvg(history);
+    burnContainer.innerHTML = window.generateBurnChartSvg(history);
 };
 
 // ---------------------------------------------------------------------------
-// Cash & Burn Rate chart
+// Capital Trend chart
 // ---------------------------------------------------------------------------
 window.generateCashChartSvg = function(history) {
     function formatCashLabel(val) {
@@ -152,13 +152,6 @@ window.generateCashChartSvg = function(history) {
                 dotClass: "chart-dot-cash",
                 dotRadius: 4,
                 tooltip: h => `Week ${h.week}: Capital $${(h.cash || 0).toLocaleString()}`
-            },
-            {
-                key: "burn",
-                cssClass: "chart-path-burn",
-                dotClass: "chart-dot-burn",
-                dotRadius: 3.5,
-                tooltip: h => `Week ${h.week}: Burn Rate $${(h.burn || 0).toLocaleString()}`
             }
         ],
         yLabel: formatCashLabel,
@@ -170,34 +163,39 @@ window.generateCashChartSvg = function(history) {
             maxFn: vals => Math.ceil(Math.max(...vals, 10000) * 1.1 / 10000) * 10000
         },
         legendItems: [
-            { color: "var(--comic-amber)", label: "Capital" },
-            { color: "var(--comic-red)", label: "Burn Rate", dashed: true }
+            { color: "var(--comic-amber)", label: "Capital" }
         ]
     });
 };
 
 // ---------------------------------------------------------------------------
-// Prototype Progress chart
+// Burn Rate Trend chart
 // ---------------------------------------------------------------------------
-window.generateProgressChartSvg = function(history) {
+window.generateBurnChartSvg = function(history) {
+    function formatBurnLabel(val) {
+        if (val >= 1000000) return `$${(val / 1000000).toFixed(1)}M`;
+        if (val >= 1000) return `$${(val / 1000).toFixed(0)}k`;
+        return `$${val}`;
+    }
+
     return _buildChartSvg({
         history,
         series: [
             {
-                key: "protoProgress",
-                cssClass: "chart-path-progress",
-                dotClass: "chart-dot-progress",
+                key: "burn",
+                cssClass: "chart-path-burn",
+                dotClass: "chart-dot-burn",
                 dotRadius: 4,
-                tooltip: h => `Week ${h.week}: Progress ${(h.protoProgress || 0)}%`
+                tooltip: h => `Week ${h.week}: Burn Rate $${(h.burn || 0).toLocaleString()}`
             }
         ],
-        yLabel: val => `${val}%`,
+        yLabel: formatBurnLabel,
         yPad: {
             minFn: () => 0,
-            maxFn: vals => Math.ceil(Math.max(...vals, 100) / 20) * 20
+            maxFn: vals => Math.ceil(Math.max(...vals, 4000) * 1.1 / 2000) * 2000
         },
         legendItems: [
-            { color: "var(--comic-green)", label: "Prototype Progress" }
+            { color: "var(--comic-red)", label: "Burn Rate", dashed: true }
         ]
     });
 };
