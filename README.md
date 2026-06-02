@@ -51,3 +51,13 @@ python3 -m http.server 8000
 npx http-server -p 8000
 ```
 Then visit `http://localhost:8000` in your web browser.
+
+---
+
+## 🚀 Recent Core Feature Updates
+
+1. **Global Campaign Objectives**: Added support for dynamic session milestones and campaign targets (e.g. Low-Volume Monocoque integration runs). Standardized data formats track active goals, metrics, and narrative bottlenecks reactively, syncing with the ledger and auto-saves.
+2. **Extensible Facility State Architecture**: Moved away from hardcoded facility properties to an extensible, open-ended array structure. Standardized facility entries to include a `rule_modifier` block that defines exact mechanics (such as negative or positive modifiers to attribute checks like `TECH` or `LOG` under specific trigger conditions).
+3. **Reactive Visual Prompt Compiler**: Integrated a live prompt generator into the **Config & Assets** tab that references active equipment, bays, and structural drawbacks, compiling an optimized isometric layout prompt for local image generators.
+4. **Workshop Monitor Blueprint Carousel**: Created a visual blueprint display directly in the workshop monitor to track facility layout evolution. The system supports full file sync (using naming rules like `facility/facility_week_{week}.png`) and a historical scroll wheel.
+5. **Separated Financial Charts**: Split the combined Capital/Burn charts on the Analytics tab into two independent, auto-scaling SVGs (💵 Capital Trend and 🔥 Burn Trend) with a dashed representation for burn rate, improving data readability across massive scaling steps.

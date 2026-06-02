@@ -13,6 +13,9 @@ Welcome to the master manual and guidebook for **APEX BLUEPRINT**, a granular, t
 6. [The Team Rolodex (NPC Glossary)](#6-the-team-rolodex-npc-glossary)
 7. [Data Slate Utilities & Chronicle Logs](#7-data-slate-utilities--chronicle-logs)
 8. [Indie Cyberpunk Art Direction](#8-indie-cyberpunk-art-direction)
+9. [Global Objectives & Campaign Milestones](#9-global-objectives--campaign-milestones)
+10. [Extensible Facility State & Blueprint Prompt Engine](#10-extensible-facility-state--blueprint-prompt-engine)
+11. [Workshop Monitor & Analytics Dashboard](#11-workshop-monitor--analytics-dashboard)
 
 ---
 
@@ -112,3 +115,28 @@ The visual identity of your dashboard and scenario updates reflects an **Indie C
 * **Line Work**: Heavy, raw, ink-black lines with dramatic cross-hatching shadows and retro grid patterns.
 * **Color Palette**: Vintage blueprint navy (`#1a365d`) and industrial mechanical amber (`#f6ad55`).
 * **UI Themes**: Thick borders, flat boxes, and custom indicator status bars.
+
+---
+
+## 9. Global Objectives & Campaign Milestones
+To support dynamic narratives and high-stakes campaigns, the Game Master (LLM) can introduce **Global Objectives**:
+* **Shared Data Structure**: Each objective tracks critical parameters like `id`, `title`, `target_metric`, `current` progress, `target` goal, `status` (active/completed), and `bottleneck` descriptions detailing current project blockers.
+* **Continuous Tracking**: Global Objectives are fully integrated into the ledger sync, auto-saving, and manual backup/restore mechanisms.
+
+---
+
+## 10. Extensible Facility State & Blueprint Prompt Engine
+Instead of relying on hardcoded properties, the game state uses an **Extensible Entity-Attribute List architecture**:
+* **Dynamic Workshop Assets**: Equipment, structural drawbacks, and workshop bays are tracked inside flexible arrays.
+* **Standardized Rule Modifiers**: Every bay, tool, or flaw can contain a `rule_modifier` block detailing its target attribute, penalty/bonus value, and specific dice roll trigger conditions (e.g. `TECH -1 on "Electronics tasks during rain"`).
+* **Blueprint Generation Engine**: The **Config & Assets** tab features a live prompt compiler that ingests the current facility state and outputs a high-detail graphic novel concept art prompt, ready to copy-paste into local image generators.
+
+---
+
+## 11. Workshop Monitor & Analytics Dashboard
+The workshop monitor interface has been designed for maximum utility and visual clarity:
+* **Workshop Blueprint Carousel**: Shows the historical evolution of your workshop layout. Defaults to the current week's blueprint render. Supports full zoom/pan lightboxing.
+* **Split Analytics Views**: Capital and weekly expenses are separated into two distinct visualizations to prevent scaling compression issues:
+  * **💵 Capital Trend**: Displays liquid asset levels over time.
+  * **🔥 Burn Trend**: Tracks operations costs as a dashed-red trendline.
+* **Local Folder Integration**: The workspace automatically scans the connected local directory for corresponding file naming rules (e.g., `facility/facility_week_{week}.png`) and binds them reactively.
