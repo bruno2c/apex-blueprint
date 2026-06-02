@@ -30,6 +30,21 @@ window.renderStateToDashboard = function() {
     if (txtProto) txtProto.innerText = `${progress}%`;
     if (lblCurrentWeek) lblCurrentWeek.innerText = `W${week}`;
 
+    // Render active campaign phase card
+    const dashActivePhase = document.getElementById("txt-active-phase");
+    const activePhaseCard = document.getElementById("active-phase-card");
+    if (dashActivePhase && activePhaseCard) {
+        if (window.state && window.state.active_campaign_phase) {
+            dashActivePhase.innerText = window.state.active_campaign_phase;
+            activePhaseCard.style.display = "block";
+        } else {
+            activePhaseCard.style.display = "none";
+        }
+    }
+
+    // Render global campaign objectives section
+    window.renderGlobalObjectives();
+
     if (window.state && window.state.meta) {
         const power = document.getElementById("lbl-meta-power");
         const seg = document.getElementById("lbl-meta-seg");
@@ -477,3 +492,97 @@ window.renderConfigView = function() {
         `;
     }).join("");
 };
+
+// ---------------------------------------------------------------------------
+// Global Objectives Renderer
+// ---------------------------------------------------------------------------
+window.renderGlobalObjectives = function() {
+    const container = document.getElementById("objectives-container");
+    const section = document.getElementById("global-objectives-section");
+    if (!container || !section) return;
+
+    if (!window.state || !window.state.global_objectives || window.state.global_objectives.length === 0) {
+        section.style.display = "none";
+        container.innerHTML = "";
+        return;
+    }
+
+    section.style.display = "block";
+
+    let html = "";
+    for (const obj of window.state.global_objectives) {
+        const title = obj.title || "Campaign Objective";
+        const metric = obj.target_metric || "Progress";
+        const current = obj.current !== undefined ? obj.current : 0;
+        const target = obj.target !== undefined ? obj.target : 1;
+        const status = obj.status || "active";
+        const bottleneck = obj.bottleneck || "";
+
+        const pct = Math.round((current / Math.max(1, target)) * 100);
+
+        // Status Badge Style
+        let statusClass = "status-active";
+        if (status === "blocked") statusClass = "status-blocked";
+        else if (status === "completed" || status === "complete") statusClass = "status-completed";
+
+        // Bottleneck HTML
+        let bottleneckHtml = "";
+        if (bottleneck && status !== "completed" && status !== "complete") {
+            bottleneckHtml = `
+                <div class="objective-bottleneck-box">
+                    <div class="objective-bottleneck-label">
+                        ⚠️ BOTTLENECK ACTIVE
+                    </div>
+                    <div>${bottleneck}</div>
+                </div>
+            `;
+        }
+
+        const progressBarHtml = renderObjectiveProgressBar(current, target, status);
+
+        html += `
+            <div class="objective-card">
+                <div class="objective-header">
+                    <div class="objective-title">${title}</div>
+                    <div class="objective-status-badge ${statusClass}">${status}</div>
+                </div>
+                <div class="objective-metric-row">
+                    <span>${metric}</span>
+                    <span>${current} / ${target} (${pct}%)</span>
+                </div>
+                ${progressBarHtml}
+                ${bottleneckHtml}
+            </div>
+        `;
+    }
+
+    container.innerHTML = html;
+};
+
+function renderObjectiveProgressBar(current, target, status) {
+    target = Math.max(1, parseInt(target) || 1);
+    current = Math.max(0, parseInt(current) || 0);
+    const ratio = Math.min(1, current / target);
+    
+    let segmentsHtml = "";
+    const colorClass = status === "blocked" ? "filled-blocked" : (status === "completed" || status === "complete" ? "filled-completed" : "filled-active");
+    
+    if (target <= 10) {
+        for (let i = 0; i < target; i++) {
+            const isFilled = i < current;
+            segmentsHtml += `<div class="objective-progress-segment ${isFilled ? colorClass : ''}"></div>`;
+        }
+    } else {
+        const filledSegments = Math.round(ratio * 10);
+        for (let i = 0; i < 10; i++) {
+            const isFilled = i < filledSegments;
+            segmentsHtml += `<div class="objective-progress-segment ${isFilled ? colorClass : ''}"></div>`;
+        }
+    }
+    
+    return `
+        <div class="objective-progress-container">
+            ${segmentsHtml}
+        </div>
+    `;
+}

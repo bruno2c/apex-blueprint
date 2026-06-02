@@ -127,7 +127,7 @@ h1 {
 
 .company-metrics-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 20px;
 }
 
@@ -943,6 +943,130 @@ textarea {
     width: 12px;
     height: 12px;
     border: 1px solid var(--ink-black);
+}
+
+/* =============================================================================
+   🎯 GLOBAL OBJECTIVES PANEL
+   ============================================================================= */
+.objectives-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+    margin-top: 10px;
+}
+
+.objective-card {
+    background: var(--panel-nested);
+    border: var(--border-thick);
+    box-shadow: 4px 4px 0px var(--ink-black);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.objective-card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px var(--ink-black);
+}
+
+.objective-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.objective-title {
+    font-family: "Permanent Marker", cursive;
+    font-size: 16px;
+    color: #fff;
+    line-height: 1.2;
+}
+
+.objective-status-badge {
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border: var(--border-thin);
+    box-shadow: 2px 2px 0px var(--ink-black);
+    transform: skewX(-6deg);
+    flex-shrink: 0;
+}
+
+.status-active {
+    background: var(--comic-amber);
+    color: var(--ink-black);
+}
+
+.status-blocked {
+    background: var(--comic-red);
+    color: #fff;
+}
+
+.status-completed {
+    background: var(--comic-green);
+    color: var(--ink-black);
+}
+
+.objective-metric-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: bold;
+}
+
+.objective-progress-container {
+    background: rgba(0, 0, 0, 0.4);
+    border: var(--border-thin);
+    height: 12px;
+    padding: 2px;
+    display: flex;
+    gap: 2px;
+}
+
+.objective-progress-segment {
+    flex: 1;
+    background: var(--text-muted);
+    opacity: 0.15;
+}
+
+.objective-progress-segment.filled-active {
+    background: var(--comic-amber);
+    opacity: 1;
+}
+
+.objective-progress-segment.filled-blocked {
+    background: var(--comic-red);
+    opacity: 1;
+}
+
+.objective-progress-segment.filled-completed {
+    background: var(--comic-green);
+    opacity: 1;
+}
+
+.objective-bottleneck-box {
+    background: rgba(0, 0, 0, 0.2);
+    border-left: 3px solid var(--comic-red);
+    padding: 8px 10px;
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--text-main);
+}
+
+.objective-bottleneck-label {
+    font-weight: bold;
+    color: var(--comic-red);
+    text-transform: uppercase;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 

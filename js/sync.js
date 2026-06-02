@@ -31,6 +31,8 @@ function _mergeStateDelta(delta) {
     if (delta.burn !== undefined)          window.state.burn = delta.burn;
     if (delta.protoProgress !== undefined) window.state.protoProgress = delta.protoProgress;
     if (delta.storybook_images !== undefined) window.state.storybook_images = delta.storybook_images;
+    if (delta.active_campaign_phase !== undefined) window.state.active_campaign_phase = delta.active_campaign_phase;
+    if (delta.global_objectives !== undefined) window.state.global_objectives = delta.global_objectives;
 
     // Nested merges
     if (delta.meta) {

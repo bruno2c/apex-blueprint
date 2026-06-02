@@ -16,6 +16,8 @@ window.DEFAULT_STATE = {
     cash: 120000,
     burn: 8000,
     protoProgress: 0,
+    active_campaign_phase: "",
+    global_objectives: [],
     meta: {
         powertrain: "EV",
         segment: "Track Weapon",
@@ -138,6 +140,12 @@ window.deleteCampaignFromList = function(campaignId) {
 // ---------------------------------------------------------------------------
 window.ensureStateSanity = function() {
     if (!window.state) return;
+    if (!window.state.global_objectives) {
+        window.state.global_objectives = [];
+    }
+    if (window.state.active_campaign_phase === undefined) {
+        window.state.active_campaign_phase = "";
+    }
     if (!window.state.personnel) window.state.personnel = {};
     if (!window.state.personnel.synergy) {
         window.state.personnel.synergy = {};
