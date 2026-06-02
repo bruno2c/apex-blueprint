@@ -406,6 +406,16 @@ window.renderWelcomeScreen = function() {
 window.renderConfigView = function() {
     window.updateDashboardFolderStatus();
 
+    // Render Blueprint Courier Prompt reactively
+    const blueprintPromptTextarea = document.getElementById("blueprint-prompt-textarea");
+    if (blueprintPromptTextarea) {
+        if (window.state && window.state.facility) {
+            blueprintPromptTextarea.value = window.compileBlueprintPrompt(window.state.facility);
+        } else {
+            blueprintPromptTextarea.value = "Awaiting facility state matrix ingestion...";
+        }
+    }
+
     const statusNode = document.getElementById("dir-status-text");
     const folderNameNode = document.getElementById("dir-folder-name");
     const connectBtn = document.getElementById("btn-connect-dir");
