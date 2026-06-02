@@ -470,39 +470,71 @@ window.renderConfigView = function() {
         return;
     }
 
-    trackerBody.innerHTML = window.state.chronicle.map((logString) => {
+    trackerBody.innerHTML = window.state.chronicle.flatMap((logString) => {
         const matchPattern = logString.match(/^W(\d+):/i);
         const parsedWeek = matchPattern ? matchPattern[1] : null;
-        if (!parsedWeek) return "";
+        if (!parsedWeek) return [];
 
-        const expectedName = `storybook_week_${parsedWeek}.png`;
-        const isTrackedInJson = window.state.storybook_images && window.state.storybook_images[parsedWeek] ? "Tracked" : "Not Tracked";
-        const isTrackedColor = isTrackedInJson === "Tracked" ? "var(--comic-green)" : "var(--text-muted)";
+        // 1. Storybook Row
+        const storybookName = `storybook_week_${parsedWeek}.png`;
+        const isStorybookTracked = window.state.storybook_images && window.state.storybook_images[parsedWeek] ? "Tracked" : "Not Tracked";
+        const isStorybookTrackedColor = isStorybookTracked === "Tracked" ? "var(--comic-green)" : "var(--text-muted)";
 
-        let localStatus = "Disconnected";
-        let localColor = "var(--text-muted)";
+        let storybookLocalStatus = "Disconnected";
+        let storybookLocalColor = "var(--text-muted)";
         if (window.dirHandle) {
-            const exists = window.localFilesMap[parsedWeek];
-            localStatus = exists ? "Found in Folder" : "Not Found";
-            localColor = exists ? "var(--comic-green)" : "var(--comic-red)";
+            const exists = window.localFilesMap && window.localFilesMap[parsedWeek];
+            storybookLocalStatus = exists ? "Found in Folder" : "Not Found";
+            storybookLocalColor = exists ? "var(--comic-green)" : "var(--comic-red)";
         } else if (!window.showDirectoryPicker) {
-            localStatus = "Unsupported";
-            localColor = "var(--comic-red)";
+            storybookLocalStatus = "Unsupported";
+            storybookLocalColor = "var(--comic-red)";
         }
 
-        return `
+        // 2. Facility Row
+        const facilityName = `facility_week_${parsedWeek}.png`;
+        const isFacilityTracked = window.state.facility_images && window.state.facility_images[parsedWeek] ? "Tracked" : "Not Tracked";
+        const isFacilityTrackedColor = isFacilityTracked === "Tracked" ? "var(--comic-green)" : "var(--text-muted)";
+
+        let facilityLocalStatus = "Disconnected";
+        let facilityLocalColor = "var(--text-muted)";
+        if (window.dirHandle) {
+            const exists = window.localFacilityFilesMap && window.localFacilityFilesMap[parsedWeek];
+            facilityLocalStatus = exists ? "Found in Folder" : "Not Found";
+            facilityLocalColor = exists ? "var(--comic-green)" : "var(--comic-red)";
+        } else if (!window.showDirectoryPicker) {
+            facilityLocalStatus = "Unsupported";
+            facilityLocalColor = "var(--comic-red)";
+        }
+
+        return [
+            `
             <tr>
-                <td style="font-weight: bold; color: var(--comic-amber)">Week ${parsedWeek}</td>
-                <td style="font-family: 'JetBrains Mono', monospace; font-size: 11px;">storybook/${expectedName}</td>
-                <td style="color: ${isTrackedColor}; font-weight: bold;">${isTrackedInJson}</td>
-                <td style="color: ${localColor}; font-weight: bold;">${localStatus}</td>
+                <td style="font-weight: bold; color: var(--comic-amber)">Week ${parsedWeek} (Scene)</td>
+                <td style="font-family: 'JetBrains Mono', monospace; font-size: 11px;">storybook/${storybookName}</td>
+                <td style="color: ${isStorybookTrackedColor}; font-weight: bold;">${isStorybookTracked}</td>
+                <td style="color: ${storybookLocalColor}; font-weight: bold;">${storybookLocalStatus}</td>
                 <td>
-                    <button class="btn-utility" style="padding: 4px 8px; font-size: 11px; margin: 0 auto; display: block;" onclick="window.bindAssetForWeek(${parsedWeek})">
+                    <button class="btn-utility" style="padding: 4px 8px; font-size: 11px; margin: 0 auto; display: block;" onclick="window.bindAssetForWeek(${parsedWeek}, 'storybook')">
                         📁 UPLOAD & BIND
                     </button>
                 </td>
             </tr>
-        `;
+            `,
+            `
+            <tr>
+                <td style="font-weight: bold; color: var(--comic-amber)">Week ${parsedWeek} (Layout)</td>
+                <td style="font-family: 'JetBrains Mono', monospace; font-size: 11px;">facility/${facilityName}</td>
+                <td style="color: ${isFacilityTrackedColor}; font-weight: bold;">${isFacilityTracked}</td>
+                <td style="color: ${facilityLocalColor}; font-weight: bold;">${facilityLocalStatus}</td>
+                <td>
+                    <button class="btn-utility" style="padding: 4px 8px; font-size: 11px; margin: 0 auto; display: block;" onclick="window.bindAssetForWeek(${parsedWeek}, 'facility')">
+                        📁 UPLOAD & BIND
+                    </button>
+                </td>
+            </tr>
+            `
+        ];
     }).join("");
 };
 
@@ -741,5 +773,101 @@ window.renderFacilityInfrastructure = function() {
             }
             flawsContainer.innerHTML = flawsHtml;
         }
+    }
+
+    // Render Facility Carousel
+    window.renderFacilityCarousel();
+};
+
+// ---------------------------------------------------------------------------
+// Facility Blueprint State Carousel
+// ---------------------------------------------------------------------------
+window.facilityCarouselWeek = null;
+
+window.renderFacilityCarousel = function() {
+    const container = document.getElementById("facility-carousel-container");
+    if (!container) return;
+
+    if (!window.state || !window.state.week) {
+        container.innerHTML = "";
+        return;
+    }
+
+    // Default to the current/last week if not set or out of bounds
+    if (window.facilityCarouselWeek === null || window.facilityCarouselWeek < 1 || window.facilityCarouselWeek > window.state.week) {
+        window.facilityCarouselWeek = window.state.week;
+    }
+
+    const currentSlideWeek = window.facilityCarouselWeek;
+
+    container.innerHTML = `
+        <div style="width: 100%; max-width: 600px; border: var(--border-thick); background: var(--panel-nested); box-shadow: 4px 4px 0px var(--ink-black); position: relative; overflow: hidden; display: flex; flex-direction: column;">
+            <!-- Image Wrapper -->
+            <div id="facility-carousel-img-frame" style="width: 100%; height: 320px; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; position: relative;">
+                <div style="font-size: 12px; color: var(--text-muted); font-weight: bold;">LOADING ISOMETRIC BLUEPRINT [W${currentSlideWeek}]...</div>
+            </div>
+            <!-- Slide Label & Navigation -->
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--panel-bg); border-top: var(--border-thin); gap: 10px;">
+                <button 
+                    class="btn-utility" 
+                    style="padding: 4px 12px; font-size: 11px; font-weight: bold; background: ${currentSlideWeek > 1 ? 'var(--comic-amber)' : 'rgba(0,0,0,0.2)'}; color: ${currentSlideWeek > 1 ? 'var(--ink-black)' : 'var(--text-muted)'}; border: var(--border-thin);"
+                    onclick="window.changeFacilityCarouselWeek(-1)"
+                    ${currentSlideWeek > 1 ? '' : 'disabled'}
+                >
+                    ◀ PREV WEEK
+                </button>
+                <div style="text-align: center;">
+                    <div style="font-family: 'Permanent Marker', cursive; font-size: 14px; color: #fff;">WEEK ${currentSlideWeek < 10 ? '0' + currentSlideWeek : currentSlideWeek} LAYOUT</div>
+                    <div style="font-size: 10px; color: var(--text-muted); font-weight: bold; text-transform: uppercase;">Blueprint Configuration</div>
+                </div>
+                <button 
+                    class="btn-utility" 
+                    style="padding: 4px 12px; font-size: 11px; font-weight: bold; background: ${currentSlideWeek < window.state.week ? 'var(--comic-amber)' : 'rgba(0,0,0,0.2)'}; color: ${currentSlideWeek < window.state.week ? 'var(--ink-black)' : 'var(--text-muted)'}; border: var(--border-thin);"
+                    onclick="window.changeFacilityCarouselWeek(1)"
+                    ${currentSlideWeek < window.state.week ? '' : 'disabled'}
+                >
+                    NEXT WEEK ▶
+                </button>
+            </div>
+        </div>
+    `;
+
+    // Resolve Image Asynchronously
+    window.getFacilityImageSrc(currentSlideWeek).then((imgSrc) => {
+        const frame = document.getElementById("facility-carousel-img-frame");
+        if (!frame) return;
+
+        if (imgSrc) {
+            frame.innerHTML = `
+                <img src="${imgSrc}" alt="Week ${currentSlideWeek} Facility Blueprint" style="max-width: 100%; max-height: 100%; object-fit: contain; cursor: pointer;" />
+                <div style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.7); color: var(--comic-amber); font-size: 9px; padding: 2px 6px; font-weight: bold; text-transform: uppercase; border: var(--border-thin);">
+                    🔍 VIEW SCHEMATIC
+                </div>
+            `;
+            frame.onclick = () => {
+                window.openLightbox(imgSrc, `WEEK ${currentSlideWeek} WORKSHOP BLUEPRINT`, `Technical isometric blueprint cross-section rendering for layout at week ${currentSlideWeek}.`);
+            };
+            frame.style.cursor = "pointer";
+        } else {
+            frame.innerHTML = `
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; padding: 20px; color: var(--text-muted);">
+                    <div style="font-family: 'Permanent Marker', cursive; font-size: 16px; color: var(--comic-red);">NO BLUEPRINT SCHEMATIC RECORDED</div>
+                    <div style="font-size: 11px; max-width: 320px; line-height: 1.4;">
+                        No isometric layout renders have been uploaded or bound for Week ${currentSlideWeek}. Go to the <strong>CONFIG & ASSETS tab</strong> to upload layouts.
+                    </div>
+                </div>
+            `;
+            frame.onclick = null;
+            frame.style.cursor = "default";
+        }
+    });
+};
+
+window.changeFacilityCarouselWeek = function(delta) {
+    if (!window.state || !window.state.week) return;
+    const targetWeek = (window.facilityCarouselWeek || window.state.week) + delta;
+    if (targetWeek >= 1 && targetWeek <= window.state.week) {
+        window.facilityCarouselWeek = targetWeek;
+        window.renderFacilityCarousel();
     }
 };

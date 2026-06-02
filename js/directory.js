@@ -140,9 +140,11 @@ window.scanLocalDirectoryFiles = async function() {
         const permitted = await window.verifyDirectoryPermission(false);
         if (!permitted) return;
 
+        const maxWeeksToScan = Math.max((window.state ? window.state.week : 1) + 5, 20);
+
+        // 1. Scan storybook
         const storybookDirHandle = await window.dirHandle.getDirectoryHandle("storybook", { create: true });
         const scannedMap = {};
-        const maxWeeksToScan = Math.max((window.state ? window.state.week : 1) + 5, 20);
         for (let w = 1; w <= maxWeeksToScan; w++) {
             try {
                 await storybookDirHandle.getFileHandle(`storybook_week_${w}.png`);
@@ -152,8 +154,21 @@ window.scanLocalDirectoryFiles = async function() {
             }
         }
         window.localFilesMap = scannedMap;
+
+        // 2. Scan facility
+        const facilityDirHandle = await window.dirHandle.getDirectoryHandle("facility", { create: true });
+        const scannedFacilityMap = {};
+        for (let w = 1; w <= maxWeeksToScan; w++) {
+            try {
+                await facilityDirHandle.getFileHandle(`facility_week_${w}.png`);
+                scannedFacilityMap[w] = true;
+            } catch (e) {
+                scannedFacilityMap[w] = false;
+            }
+        }
+        window.localFacilityFilesMap = scannedFacilityMap;
     } catch (e) {
-        console.error("Error scanning storybook directory:", e);
+        console.error("Error scanning storybook & facility directories:", e);
     }
 };
 
@@ -315,12 +330,30 @@ window.getStorybookImageSrc = async function(week) {
     return null;
 };
 
+window.getFacilityImageSrc = async function(week) {
+    if (window.dirHandle) {
+        try {
+            const permitted = await window.verifyDirectoryPermission(false);
+            if (permitted) {
+                const facilityDirHandle = await window.dirHandle.getDirectoryHandle("facility", { create: true });
+                const fileName = `facility_week_${week}.png`;
+                const fileHandle = await facilityDirHandle.getFileHandle(fileName);
+                const file = await fileHandle.getFile();
+                return URL.createObjectURL(file);
+            }
+        } catch (e) {
+            console.debug(`Image facility_week_${week}.png not found in facility/ directory.`);
+        }
+    }
+    return null;
+};
+
 // ---------------------------------------------------------------------------
 // Asset binding (config tab — upload image directly for a given week)
 // ---------------------------------------------------------------------------
-window.bindAssetForWeek = async function(weekNum) {
+window.bindAssetForWeek = async function(weekNum, type = "storybook") {
     if (!window.dirHandle) {
-        window.triggerToast("⚠️ DIRECTORY DISCONNECTED", "Connect a local folder in this CONFIG tab to bind storybook assets.");
+        window.triggerToast("⚠️ DIRECTORY DISCONNECTED", "Connect a local folder in this CONFIG tab to bind assets.");
         return;
     }
 
@@ -334,24 +367,44 @@ window.bindAssetForWeek = async function(weekNum) {
         const permitted = await window.verifyDirectoryPermission(true);
         if (permitted) {
             try {
-                const storybookDirHandle = await window.dirHandle.getDirectoryHandle("storybook", { create: true });
-                const fileName = `storybook_week_${weekNum}.png`;
-                const fileHandle = await storybookDirHandle.getFileHandle(fileName, { create: true });
-                const writable = await fileHandle.createWritable();
-                await writable.write(file);
-                await writable.close();
+                if (type === "facility") {
+                    const facilityDirHandle = await window.dirHandle.getDirectoryHandle("facility", { create: true });
+                    const fileName = `facility_week_${weekNum}.png`;
+                    const fileHandle = await facilityDirHandle.getFileHandle(fileName, { create: true });
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(file);
+                    await writable.close();
 
-                if (!window.state.storybook_images) {
-                    window.state.storybook_images = {};
+                    if (!window.state.facility_images) {
+                        window.state.facility_images = {};
+                    }
+                    window.state.facility_images[weekNum] = fileName;
+
+                    window.saveState();
+                    await window.scanLocalDirectoryFiles();
+                    window.renderStateToDashboard();
+                    window.renderConfigView();
+                    window.triggerToast("⚡ FACILITY STATE BOUND", `Successfully bound and saved ${fileName} for Week ${weekNum}.`);
+                } else {
+                    const storybookDirHandle = await window.dirHandle.getDirectoryHandle("storybook", { create: true });
+                    const fileName = `storybook_week_${weekNum}.png`;
+                    const fileHandle = await storybookDirHandle.getFileHandle(fileName, { create: true });
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(file);
+                    await writable.close();
+
+                    if (!window.state.storybook_images) {
+                        window.state.storybook_images = {};
+                    }
+                    window.state.storybook_images[weekNum] = fileName;
+
+                    window.saveState();
+                    await window.scanLocalDirectoryFiles();
+                    window.renderStateToDashboard();
+                    window.renderStorybookView();
+                    window.renderConfigView();
+                    window.triggerToast("⚡ IMAGE BOUND", `Successfully bound and saved ${fileName} for Week ${weekNum}.`);
                 }
-                window.state.storybook_images[weekNum] = fileName;
-
-                window.saveState();
-                await window.scanLocalDirectoryFiles();
-                window.renderStateToDashboard();
-                window.renderStorybookView();
-                window.renderConfigView();
-                window.triggerToast("⚡ IMAGE BOUND", `Successfully bound and saved ${fileName} for Week ${weekNum}.`);
 
                 await window.autosaveBackupToLocalDirectory();
             } catch (err) {

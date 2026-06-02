@@ -26,6 +26,9 @@ window.addEventListener("DOMContentLoaded", () => {
             if (!window.state.storybook_images) {
                 window.state.storybook_images = {};
             }
+            if (!window.state.facility_images) {
+                window.state.facility_images = {};
+            }
         } catch (e) {
             console.error("Fault parsing cached local save state nodes.");
             window.state = null;

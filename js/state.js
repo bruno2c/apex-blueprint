@@ -60,6 +60,7 @@ window.DEFAULT_STATE = {
         synergy: { sarah_and_leo: 0 }
     },
     storybook_images: {},
+    facility_images: {},
     chronicle: [],
     history: []
 };
@@ -169,6 +170,9 @@ window.ensureStateSanity = function() {
     }
     if (window.state.active_campaign_phase === undefined) {
         window.state.active_campaign_phase = "";
+    }
+    if (!window.state.facility_images) {
+        window.state.facility_images = {};
     }
     if (!window.state.facility) {
         const oldFlaw = (window.state.facility_modifiers && window.state.facility_modifiers.flaw) || "Drafty Roof";

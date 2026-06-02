@@ -31,6 +31,7 @@ function _mergeStateDelta(delta) {
     if (delta.burn !== undefined)          window.state.burn = delta.burn;
     if (delta.protoProgress !== undefined) window.state.protoProgress = delta.protoProgress;
     if (delta.storybook_images !== undefined) window.state.storybook_images = delta.storybook_images;
+    if (delta.facility_images !== undefined) window.state.facility_images = delta.facility_images;
     if (delta.active_campaign_phase !== undefined) window.state.active_campaign_phase = delta.active_campaign_phase;
     if (delta.global_objectives !== undefined) window.state.global_objectives = delta.global_objectives;
 
@@ -135,6 +136,9 @@ function _mergeStateDelta(delta) {
 
     if (!window.state.storybook_images) {
         window.state.storybook_images = {};
+    }
+    if (!window.state.facility_images) {
+        window.state.facility_images = {};
     }
 }
 
@@ -297,6 +301,9 @@ window.importDataSlateJson = function(event) {
             window.state = loadedState;
             if (!window.state.storybook_images) {
                 window.state.storybook_images = {};
+            }
+            if (!window.state.facility_images) {
+                window.state.facility_images = {};
             }
             localStorage.setItem(window.SAVE_KEY, JSON.stringify(window.state));
 
