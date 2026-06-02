@@ -34,9 +34,15 @@ function _mergeStateDelta(delta) {
     if (delta.active_campaign_phase !== undefined) window.state.active_campaign_phase = delta.active_campaign_phase;
     if (delta.global_objectives !== undefined) window.state.global_objectives = delta.global_objectives;
 
-    // Nested merges
     if (delta.meta) {
         window.state.meta = { ...(window.state.meta || {}), ...delta.meta };
+    }
+    if (delta.facility) {
+        window.state.facility = { ...(window.state.facility || {}), ...delta.facility };
+        if (delta.facility.bays) window.state.facility.bays = delta.facility.bays;
+        if (delta.facility.environmental_grid) window.state.facility.environmental_grid = delta.facility.environmental_grid;
+        if (delta.facility.infrastructure_nodes) window.state.facility.infrastructure_nodes = delta.facility.infrastructure_nodes;
+        if (delta.facility.structural_flaws) window.state.facility.structural_flaws = delta.facility.structural_flaws;
     }
     if (delta.facility_modifiers) {
         window.state.facility_modifiers = { ...(window.state.facility_modifiers || {}), ...delta.facility_modifiers };

@@ -1069,6 +1069,16 @@ textarea {
     gap: 4px;
 }
 
+@keyframes flashing-alert-anim {
+    0% { opacity: 1; background-color: var(--comic-red); box-shadow: 0 0 2px var(--comic-red); }
+    50% { opacity: 0.4; background-color: #ff4d4d; box-shadow: 0 0 8px #ff4d4d; }
+    100% { opacity: 1; background-color: var(--comic-red); box-shadow: 0 0 2px var(--comic-red); }
+}
+
+.flashing-alert {
+    animation: flashing-alert-anim 0.8s infinite !important;
+}
+
 
 
 

@@ -122,9 +122,41 @@ window.compileMasterPrompt = function() {
             perk:       perk.split(" ")[0],
         },
         network: {},
-        facility_modifiers: {
-            flaw: flaw.split(" ")[0],
-            active_penalties: [],
+        facility: {
+            name: "District-9 Industrial Bay",
+            bays: [
+                { id: "bay_1", contents: "Line Alpha Assembly", footprint: "Large" },
+                { id: "bay_2", contents: "Prototype Diagnostic Bench", footprint: "Small" }
+            ],
+            environmental_grid: [
+                { id: "power_grid", label: "Grid Power", current: 45, ceiling: 50, unit: "kW", status: "Nominal" }
+            ],
+            infrastructure_nodes: [
+                {
+                    id: "stamping_press",
+                    category: "Heavy Machinery",
+                    label: "Hydraulic Stamping Press",
+                    condition: "Nominal",
+                    active_quirk: "Improvised Alignment",
+                    rule_modifier: { target: "TECH", value: 0, trigger: "Chassis fabrication tasks" }
+                }
+            ],
+            structural_flaws: [
+                {
+                    id: flaw.split("(")[0].trim().toLowerCase().replace(/[^a-z0-9]+/g, "_"),
+                    label: flaw.split("(")[0].trim(),
+                    severity: "Minor",
+                    rule_modifier: (function() {
+                        const flawId = flaw.split("(")[0].trim().toLowerCase();
+                        if (flawId.includes("anxious")) {
+                            return { target: "CHA", value: -1, trigger: "Interactions under budget pressure" };
+                        } else if (flawId.includes("improvised")) {
+                            return { target: "TECH", value: -1, trigger: "Precision machining or assembly" };
+                        }
+                        return { target: "TECH", value: -1, trigger: "Electronics tasks during rain" };
+                    })()
+                }
+            ]
         },
         personnel: {
             lucius: {

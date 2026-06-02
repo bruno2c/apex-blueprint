@@ -45,6 +45,9 @@ window.renderStateToDashboard = function() {
     // Render global campaign objectives section
     window.renderGlobalObjectives();
 
+    // Render facility infrastructure & utilities
+    window.renderFacilityInfrastructure();
+
     if (window.state && window.state.meta) {
         const power = document.getElementById("lbl-meta-power");
         const seg = document.getElementById("lbl-meta-seg");
@@ -586,3 +589,147 @@ function renderObjectiveProgressBar(current, target, status) {
         </div>
     `;
 }
+
+// ---------------------------------------------------------------------------
+// Facility Infrastructure & Utilities Renderer
+// ---------------------------------------------------------------------------
+window.renderFacilityInfrastructure = function() {
+    const section = document.getElementById("facility-infrastructure-section");
+    const gridContainer = document.getElementById("environmental-grid-container");
+    const nodesContainer = document.getElementById("infrastructure-nodes-container");
+    
+    if (!section || !gridContainer || !nodesContainer) return;
+
+    if (!window.state || !window.state.facility) {
+        section.style.display = "none";
+        return;
+    }
+
+    section.style.display = "block";
+
+    // 1. Environmental Grid (Utility Gauges)
+    const envGrid = window.state.facility.environmental_grid || [];
+    let gridHtml = "";
+    if (envGrid.length === 0) {
+        gridHtml = `<div style="grid-column: span 3; text-align: center; color: var(--text-muted); font-size: 12px; padding: 12px; border: var(--border-thin); background: rgba(0,0,0,0.1);">No grid utility systems online.</div>`;
+    } else {
+        for (const grid of envGrid) {
+            const current = parseFloat(grid.current) || 0;
+            const ceiling = parseFloat(grid.ceiling) || 1;
+            const pct = Math.min(100, Math.round((current / ceiling) * 100));
+            const isOverload = current > ceiling;
+            const barColor = isOverload ? "var(--comic-red)" : "var(--comic-amber)";
+            const progressClass = isOverload ? "flashing-alert" : "";
+            const alertBadge = isOverload ? `<span class="flashing-alert" style="color: #fff; font-weight: bold; font-size: 9px; padding: 2px 4px; border: var(--border-thin); border-color: var(--comic-red);">⚠️ OVERLOAD</span>` : "";
+
+            gridHtml += `
+                <div class="num-box" style="border-color: ${barColor}; display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="num-label" style="color: ${isOverload ? 'var(--comic-red)' : 'var(--text-muted)'};">${grid.label}</div>
+                        ${alertBadge}
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                        <div class="num-val" style="font-size: 24px; margin-top: 0; color: ${barColor};">
+                            ${current} <span style="font-size: 13px; font-family: 'JetBrains Mono', monospace; font-weight: bold; color: var(--text-main);">${grid.unit || ""}</span>
+                        </div>
+                        <div style="font-size: 11px; color: var(--text-muted); font-weight: bold;">
+                            MAX: ${ceiling} ${grid.unit || ""}
+                        </div>
+                    </div>
+                    <div style="background: rgba(0, 0, 0, 0.4); border: var(--border-thin); height: 12px; padding: 2px;">
+                        <div class="${progressClass}" style="width: ${pct}%; height: 100%; background: ${barColor}; transition: width 0.3s ease;"></div>
+                    </div>
+                </div>
+            `;
+        }
+    }
+    gridContainer.innerHTML = gridHtml;
+
+    // 2. Infrastructure Nodes
+    const nodes = window.state.facility.infrastructure_nodes || [];
+    let nodesHtml = "";
+    if (nodes.length === 0) {
+        nodesHtml = `<div style="grid-column: span 3; text-align: center; color: var(--text-muted); font-size: 12px; padding: 20px; border: var(--border-thin); background: rgba(0,0,0,0.1);">No active heavy machinery or workstations cataloged.</div>`;
+    } else {
+        for (const node of nodes) {
+            const conditionLower = (node.condition || "").toLowerCase();
+            const isAlert = conditionLower === "degraded" || conditionLower === "blown";
+            const cardBorderColor = isAlert ? "var(--comic-red)" : "var(--comic-amber)";
+            
+            const conditionBadge = isAlert 
+                ? `<span class="objective-status-badge status-blocked flashing-alert" style="margin-left: auto;">⚠️ ${node.condition.toUpperCase()}</span>`
+                : `<span class="objective-status-badge status-active" style="margin-left: auto; background: var(--panel-bg); color: var(--text-main); border-color: var(--comic-amber);">${node.condition.toUpperCase()}</span>`;
+
+            let ruleModHtml = "";
+            if (node.rule_modifier && node.rule_modifier.target && node.rule_modifier.target !== "NONE") {
+                const valSign = node.rule_modifier.value >= 0 ? `+${node.rule_modifier.value}` : node.rule_modifier.value;
+                ruleModHtml = `
+                    <div style="font-size: 11px; margin-top: 6px; padding: 4px 8px; background: rgba(0,0,0,0.15); border-left: 2px solid ${cardBorderColor}; color: var(--text-main);">
+                        <strong>Roll Modifier:</strong> ${valSign} to ${node.rule_modifier.target} on <em>"${node.rule_modifier.trigger}"</em>
+                    </div>
+                `;
+            }
+
+            nodesHtml += `
+                <div class="objective-card" style="border-color: ${cardBorderColor};">
+                    <div class="objective-header" style="align-items: center; margin-bottom: 2px;">
+                        <div class="objective-title" style="color: ${isAlert ? 'var(--comic-red)' : '#fff'};">${node.label}</div>
+                        ${conditionBadge}
+                    </div>
+                    <div style="font-size: 10px; color: var(--text-muted); font-weight: bold; text-transform: uppercase; margin-bottom: 6px;">
+                        ${node.category}
+                    </div>
+                    <div style="font-size: 11px; background: rgba(0,0,0,0.2); padding: 8px; border: var(--border-thin); border-color: rgba(255,255,255,0.05); min-height: 44px; line-height: 1.3;">
+                        <span style="font-size: 9px; color: var(--text-muted); display: block; font-weight: bold; text-transform: uppercase; margin-bottom: 2px;">Active Quirk</span>
+                        ${node.active_quirk || "None registered."}
+                    </div>
+                    ${ruleModHtml}
+                </div>
+            `;
+        }
+    }
+    nodesContainer.innerHTML = nodesHtml;
+
+    // 3. Structural Flaws
+    const flawsContainer = document.getElementById("structural-flaws-container");
+    const flawsTitle = document.getElementById("structural-flaws-title-node");
+    const flaws = window.state.facility.structural_flaws || [];
+    if (flawsContainer) {
+        if (flaws.length === 0) {
+            if (flawsTitle) flawsTitle.style.display = "none";
+            flawsContainer.style.display = "none";
+        } else {
+            if (flawsTitle) flawsTitle.style.display = "block";
+            flawsContainer.style.display = "grid";
+            
+            let flawsHtml = "";
+            for (const flaw of flaws) {
+                const label = flaw.label || "Structural Flaw";
+                const severity = flaw.severity || "Minor";
+                const isCritical = severity.toLowerCase() === "major" || severity.toLowerCase() === "critical";
+                const severityClass = isCritical ? "status-blocked" : "status-active";
+                
+                let ruleModHtml = "";
+                if (flaw.rule_modifier && flaw.rule_modifier.target && flaw.rule_modifier.target !== "NONE") {
+                    const valSign = flaw.rule_modifier.value >= 0 ? `+${flaw.rule_modifier.value}` : flaw.rule_modifier.value;
+                    ruleModHtml = `
+                        <div style="font-size: 11px; margin-top: 6px; padding: 4px 8px; background: rgba(0,0,0,0.15); border-left: 2px solid var(--comic-red); color: var(--text-main);">
+                            <strong>Roll Modifier:</strong> ${valSign} to ${flaw.rule_modifier.target} on <em>"${flaw.rule_modifier.trigger}"</em>
+                        </div>
+                    `;
+                }
+
+                flawsHtml += `
+                    <div class="objective-card" style="border-color: var(--comic-red);">
+                        <div class="objective-header" style="align-items: center; margin-bottom: 4px;">
+                            <div class="objective-title" style="color: var(--comic-red);">${label}</div>
+                            <span class="objective-status-badge ${severityClass}" style="margin-left: auto;">${severity.toUpperCase()}</span>
+                        </div>
+                        ${ruleModHtml}
+                    </div>
+                `;
+            }
+            flawsContainer.innerHTML = flawsHtml;
+        }
+    }
+};

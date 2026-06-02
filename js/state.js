@@ -25,9 +25,33 @@ window.DEFAULT_STATE = {
         perk: "Corporate Dropout",
     },
     network: {},
-    facility_modifiers: {
-        flaw: "Drafty Roof",
-        active_penalties: [],
+    facility: {
+        name: "District-9 Industrial Bay",
+        bays: [
+            { id: "bay_1", contents: "Line Alpha Assembly", footprint: "Large" },
+            { id: "bay_2", contents: "Prototype Diagnostic Bench", footprint: "Small" }
+        ],
+        environmental_grid: [
+            { id: "power_grid", label: "Grid Power", current: 45, ceiling: 50, unit: "kW", status: "Nominal" }
+        ],
+        infrastructure_nodes: [
+            {
+                id: "stamping_press",
+                category: "Heavy Machinery",
+                label: "Hydraulic Stamping Press",
+                condition: "Degraded",
+                active_quirk: "Manual Feed Lever",
+                rule_modifier: { target: "TECH", value: -1, trigger: "Chassis fabrication tasks" }
+            }
+        ],
+        structural_flaws: [
+            {
+                id: "drafty_roof",
+                label: "Drafty Roof",
+                severity: "Minor",
+                rule_modifier: { target: "TECH", value: -1, trigger: "Electronics tasks during rain" }
+            }
+        ]
     },
     personnel: {
         lucius: { role: "ARCHITECT", tech: 0, cha: 0, log: 0, per: 0 },
@@ -146,6 +170,37 @@ window.ensureStateSanity = function() {
     if (window.state.active_campaign_phase === undefined) {
         window.state.active_campaign_phase = "";
     }
+    if (!window.state.facility) {
+        const oldFlaw = (window.state.facility_modifiers && window.state.facility_modifiers.flaw) || "Drafty Roof";
+        window.state.facility = {
+            name: "District-9 Industrial Bay",
+            bays: [
+                { id: "bay_1", contents: "Line Alpha Assembly", footprint: "Large" },
+                { id: "bay_2", contents: "Prototype Diagnostic Bench", footprint: "Small" }
+            ],
+            environmental_grid: [
+                { id: "power_grid", label: "Grid Power", current: 45, ceiling: 50, unit: "kW", status: "Nominal" }
+            ],
+            infrastructure_nodes: [
+                {
+                    id: "stamping_press",
+                    category: "Heavy Machinery",
+                    label: "Hydraulic Stamping Press",
+                    condition: "Nominal",
+                    active_quirk: "Improvised Alignment",
+                    rule_modifier: { target: "TECH", value: 0, trigger: "Chassis fabrication tasks" }
+                }
+            ],
+            structural_flaws: [
+                {
+                    id: oldFlaw.toLowerCase().replace(/[^a-z0-9]+/g, "_"),
+                    label: oldFlaw,
+                    severity: "Minor",
+                    rule_modifier: { target: "TECH", value: -1, trigger: "Electronics tasks during rain" }
+                }
+            ]
+        };
+    }
     if (!window.state.personnel) window.state.personnel = {};
     if (!window.state.personnel.synergy) {
         window.state.personnel.synergy = {};
@@ -226,4 +281,43 @@ window.expandChronicleRanges = function(chronicle) {
         }
     }
     return expanded;
+};
+
+// ---------------------------------------------------------------------------
+// Dice Roll Interceptor Logic
+// ---------------------------------------------------------------------------
+window.interceptDiceRoll = function(attribute, context, baseRollValue = 0) {
+    if (!window.state || !window.state.facility) {
+        return baseRollValue;
+    }
+    
+    let modifierTotal = 0;
+    const attrUpper = String(attribute).toUpperCase();
+    const contextLower = String(context).toLowerCase();
+
+    // 1. Scan infrastructure_nodes
+    const nodes = window.state.facility.infrastructure_nodes || [];
+    for (const node of nodes) {
+        const mod = node.rule_modifier;
+        if (mod && String(mod.target).toUpperCase() === attrUpper) {
+            const triggerText = String(mod.trigger || "").toLowerCase();
+            if (contextLower.includes(triggerText) || triggerText.split(/\s+/).every(word => contextLower.includes(word))) {
+                modifierTotal += parseInt(mod.value) || 0;
+            }
+        }
+    }
+
+    // 2. Scan structural_flaws
+    const flaws = window.state.facility.structural_flaws || [];
+    for (const flaw of flaws) {
+        const mod = flaw.rule_modifier;
+        if (mod && String(mod.target).toUpperCase() === attrUpper) {
+            const triggerText = String(mod.trigger || "").toLowerCase();
+            if (contextLower.includes(triggerText) || triggerText.split(/\s+/).every(word => contextLower.includes(word))) {
+                modifierTotal += parseInt(mod.value) || 0;
+            }
+        }
+    }
+
+    return baseRollValue + modifierTotal;
 };
