@@ -307,8 +307,44 @@ window.updateMergedPromptDisplay = function() {
 
     // Clone state, strip bulky fields not needed by the GM
     const cleanState = JSON.parse(JSON.stringify(window.state));
+
+    // Omit bulky image and history fields
     delete cleanState.history;
     delete cleanState.storybook_images;
+    delete cleanState.facility_images;
+
+    // Remove avatars from network NPCs to reduce token size
+    if (cleanState.network) {
+        for (const npcId in cleanState.network) {
+            if (cleanState.network[npcId]) {
+                delete cleanState.network[npcId].avatar;
+            }
+        }
+    }
+
+    // Omit legacy/unused top-level fields (e.g. saraMorale, leoMorale, facility_modifiers, etc.)
+    const allowedKeys = [
+        "campaignId",
+        "campaignName",
+        "week",
+        "cash",
+        "burn",
+        "protoProgress",
+        "active_campaign_phase",
+        "global_objectives",
+        "meta",
+        "network",
+        "facility",
+        "inventory",
+        "personnel",
+        "chronicle"
+    ];
+    for (const key of Object.keys(cleanState)) {
+        if (!allowedKeys.includes(key)) {
+            delete cleanState[key];
+        }
+    }
+
     const activePayload = JSON.stringify(cleanState, null, 2);
 
     const isNewGame = window.state.week === 1 && window.state.protoProgress === 0;

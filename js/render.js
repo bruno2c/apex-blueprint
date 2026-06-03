@@ -155,6 +155,10 @@ window.updateCharacterUIPanels = async function() {
             }
         }
 
+        const descriptionHtml = charData.description
+            ? `<div class="crew-desc">"${charData.description}"</div>`
+            : "";
+
         html += `
             <div class="crew-card" ${borderStyle}>
                 <div class="avatar-pill-container" ${ringBorderStyle}>
@@ -163,12 +167,14 @@ window.updateCharacterUIPanels = async function() {
                         alt="${displayName}"
                         onerror="this.style.display = 'none'"
                     />
+                    <button class="btn-char-desc" onclick="window.editCharDescription('${key}')" title="Edit character description/dossier">📝</button>
                 </div>
                 <div class="crew-info-block">
                     <div class="crew-name">${displayName}</div>
                     <div class="crew-role" ${roleStyle}>
                         ${roleText}
                     </div>
+                    ${descriptionHtml}
                     <div class="stat-badge-grid">
                         <div>TECH: <span ${statValueStyle}>${charData.tech !== undefined ? charData.tech : 0}</span></div>
                         <div>CHA:  <span ${statValueStyle}>${charData.cha  !== undefined ? charData.cha  : 0}</span></div>
@@ -1041,4 +1047,20 @@ window.renderInventory = function() {
         }
     }
     componentsContainer.innerHTML = componentsHtml;
+};
+
+window.editCharDescription = function(charKey) {
+    if (!window.state || !window.state.personnel) return;
+    const char = window.state.personnel[charKey];
+    if (!char) return;
+
+    const existingDesc = char.description || "";
+    const newDesc = prompt(`Enter a narrative dossier / description for ${charKey.toUpperCase()}:`, existingDesc);
+    if (newDesc === null) return; // User cancelled
+
+    char.description = newDesc.trim();
+    window.saveState();
+    window.updateCharacterUIPanels();
+    window.updateMergedPromptDisplay();
+    window.triggerToast("DOSSIER UPDATED", `Dossier details updated for ${charKey.toUpperCase()}.`);
 };
