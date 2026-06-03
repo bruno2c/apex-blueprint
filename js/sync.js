@@ -45,6 +45,11 @@ function _mergeStateDelta(delta) {
         if (delta.facility.infrastructure_nodes) window.state.facility.infrastructure_nodes = delta.facility.infrastructure_nodes;
         if (delta.facility.structural_flaws) window.state.facility.structural_flaws = delta.facility.structural_flaws;
     }
+    if (delta.inventory) {
+        window.state.inventory = { ...(window.state.inventory || {}), ...delta.inventory };
+        if (delta.inventory.vehicles) window.state.inventory.vehicles = delta.inventory.vehicles;
+        if (delta.inventory.components) window.state.inventory.components = delta.inventory.components;
+    }
     if (delta.facility_modifiers) {
         window.state.facility_modifiers = { ...(window.state.facility_modifiers || {}), ...delta.facility_modifiers };
     }
