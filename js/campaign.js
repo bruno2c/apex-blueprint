@@ -165,9 +165,24 @@ window.compileMasterPrompt = function() {
                 cha:  window.stats.cha,
                 log:  window.stats.log,
                 per:  window.stats.per,
+                description: "Founder and visionary designer. Brilliant at structural pivots but currently struggling with severe operational paranoia. Commands boardroom strategy but fails at basic human perception."
             },
-            sarah: { morale: 100, tech: 2, cha: -1, log: 0, per: 2 },
-            leo:   { morale: 100, tech: 1, cha:  1, log: 1, per: -1 },
+            sarah: {
+                morale: 100,
+                tech: 2,
+                cha: -1,
+                log: 0,
+                per: 2,
+                description: "Abrasive high-voltage cell architect. Controls all custom firmware loops and thermal configurations. Zero patience for bureaucracy; highly protective of shop engineering secrets."
+            },
+            leo: {
+                morale: 100,
+                tech: 1,
+                cha: 1,
+                log: 1,
+                per: -1,
+                description: "Veteran fabrication mechanic who anchors the physical assembly jigs. Fiercely loyal, but currently running on pure exhaustion from extreme shop floor overtime."
+            },
             synergy: { sarah_and_leo: 0 }
         },
         storybook_images: {},
