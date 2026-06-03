@@ -53,6 +53,56 @@ window.DEFAULT_STATE = {
             }
         ]
     },
+    inventory: {
+        vehicles: [
+            {
+                id: "chassis_03_track_ready",
+                label: "Line Alpha: Vehicle Chassis 03",
+                status: "Safe Stock",
+                condition: "Optimal",
+                powertrain: "EV Weapon Baseline",
+                active_quirk: "Fully calibrated firmware loop",
+                market_value: 120000
+            },
+            {
+                id: "chassis_04_track_ready",
+                label: "Line Alpha: Vehicle Chassis 04",
+                status: "Safe Stock",
+                condition: "Optimal",
+                powertrain: "EV Weapon Baseline",
+                active_quirk: "Fresh calibration profile validation",
+                market_value: 120000
+            }
+        ],
+        components: [
+            {
+                id: "carbon_monocoque_tubs",
+                category: "Structural Raw Materials",
+                label: "OmniControl Carbon Tubs",
+                quantity: 2,
+                unit: "Units",
+                condition: "Optimal",
+                rule_modifier: {
+                    target: "NONE",
+                    value: 0,
+                    trigger: "Baseline chassis structure feedstock"
+                }
+            },
+            {
+                id: "elite_carbon_ceramic_brakes",
+                category: "Performance Hardware",
+                label: "Tier-1 Carbon-Ceramic Brake Kits",
+                quantity: 3,
+                unit: "Sets",
+                condition: "Nominal",
+                rule_modifier: {
+                    target: "TECH",
+                    value: 1,
+                    trigger: "Track performance testing and validation sweeps"
+                }
+            }
+        ]
+    },
     personnel: {
         lucius: { role: "ARCHITECT", tech: 0, cha: 0, log: 0, per: 0 },
         sarah: { morale: 100, tech: 2, cha: -1, log: 0, per: 2 },
@@ -165,6 +215,12 @@ window.deleteCampaignFromList = function(campaignId) {
 // ---------------------------------------------------------------------------
 window.ensureStateSanity = function() {
     if (!window.state) return;
+    if (window.state.inventory && window.DEFAULT_STATE && window.state.inventory === window.DEFAULT_STATE.inventory) {
+        window.state.inventory = JSON.parse(JSON.stringify(window.DEFAULT_STATE.inventory));
+    }
+    if (window.state.facility && window.DEFAULT_STATE && window.state.facility === window.DEFAULT_STATE.facility) {
+        window.state.facility = JSON.parse(JSON.stringify(window.DEFAULT_STATE.facility));
+    }
     if (!window.state.global_objectives) {
         window.state.global_objectives = [];
     }
@@ -201,6 +257,58 @@ window.ensureStateSanity = function() {
                     label: oldFlaw,
                     severity: "Minor",
                     rule_modifier: { target: "TECH", value: -1, trigger: "Electronics tasks during rain" }
+                }
+            ]
+        };
+    }
+    if (!window.state.inventory) {
+        window.state.inventory = {
+            vehicles: [
+                {
+                    id: "chassis_03_track_ready",
+                    label: "Line Alpha: Vehicle Chassis 03",
+                    status: "Safe Stock",
+                    condition: "Optimal",
+                    powertrain: "EV Weapon Baseline",
+                    active_quirk: "Fully calibrated firmware loop",
+                    market_value: 120000
+                },
+                {
+                    id: "chassis_04_track_ready",
+                    label: "Line Alpha: Vehicle Chassis 04",
+                    status: "Safe Stock",
+                    condition: "Optimal",
+                    powertrain: "EV Weapon Baseline",
+                    active_quirk: "Fresh calibration profile validation",
+                    market_value: 120000
+                }
+            ],
+            components: [
+                {
+                    id: "carbon_monocoque_tubs",
+                    category: "Structural Raw Materials",
+                    label: "OmniControl Carbon Tubs",
+                    quantity: 2,
+                    unit: "Units",
+                    condition: "Optimal",
+                    rule_modifier: {
+                        target: "NONE",
+                        value: 0,
+                        trigger: "Baseline chassis structure feedstock"
+                    }
+                },
+                {
+                    id: "elite_carbon_ceramic_brakes",
+                    category: "Performance Hardware",
+                    label: "Tier-1 Carbon-Ceramic Brake Kits",
+                    quantity: 3,
+                    unit: "Sets",
+                    condition: "Nominal",
+                    rule_modifier: {
+                        target: "TECH",
+                        value: 1,
+                        trigger: "Track performance testing and validation sweeps"
+                    }
                 }
             ]
         };
@@ -291,7 +399,7 @@ window.expandChronicleRanges = function(chronicle) {
 // Dice Roll Interceptor Logic
 // ---------------------------------------------------------------------------
 window.interceptDiceRoll = function(attribute, context, baseRollValue = 0) {
-    if (!window.state || !window.state.facility) {
+    if (!window.state) {
         return baseRollValue;
     }
     
@@ -300,25 +408,43 @@ window.interceptDiceRoll = function(attribute, context, baseRollValue = 0) {
     const contextLower = String(context).toLowerCase();
 
     // 1. Scan infrastructure_nodes
-    const nodes = window.state.facility.infrastructure_nodes || [];
-    for (const node of nodes) {
-        const mod = node.rule_modifier;
-        if (mod && String(mod.target).toUpperCase() === attrUpper) {
-            const triggerText = String(mod.trigger || "").toLowerCase();
-            if (contextLower.includes(triggerText) || triggerText.split(/\s+/).every(word => contextLower.includes(word))) {
-                modifierTotal += parseInt(mod.value) || 0;
+    if (window.state.facility) {
+        const nodes = window.state.facility.infrastructure_nodes || [];
+        for (const node of nodes) {
+            const mod = node.rule_modifier;
+            if (mod && String(mod.target).toUpperCase() === attrUpper) {
+                const triggerText = String(mod.trigger || "").toLowerCase();
+                if (contextLower.includes(triggerText) || triggerText.split(/\s+/).every(word => contextLower.includes(word))) {
+                    modifierTotal += parseInt(mod.value) || 0;
+                }
+            }
+        }
+
+        // 2. Scan structural_flaws
+        const flaws = window.state.facility.structural_flaws || [];
+        for (const flaw of flaws) {
+            const mod = flaw.rule_modifier;
+            if (mod && String(mod.target).toUpperCase() === attrUpper) {
+                const triggerText = String(mod.trigger || "").toLowerCase();
+                if (contextLower.includes(triggerText) || triggerText.split(/\s+/).every(word => contextLower.includes(word))) {
+                    modifierTotal += parseInt(mod.value) || 0;
+                }
             }
         }
     }
 
-    // 2. Scan structural_flaws
-    const flaws = window.state.facility.structural_flaws || [];
-    for (const flaw of flaws) {
-        const mod = flaw.rule_modifier;
-        if (mod && String(mod.target).toUpperCase() === attrUpper) {
-            const triggerText = String(mod.trigger || "").toLowerCase();
-            if (contextLower.includes(triggerText) || triggerText.split(/\s+/).every(word => contextLower.includes(word))) {
-                modifierTotal += parseInt(mod.value) || 0;
+    // 3. Scan components in inventory
+    if (window.state.inventory && window.state.inventory.components) {
+        const components = window.state.inventory.components || [];
+        for (const comp of components) {
+            if (comp.quantity && comp.quantity > 0) {
+                const mod = comp.rule_modifier;
+                if (mod && String(mod.target).toUpperCase() === attrUpper) {
+                    const triggerText = String(mod.trigger || "").toLowerCase();
+                    if (contextLower.includes(triggerText) || triggerText.split(/\s+/).every(word => contextLower.includes(word))) {
+                        modifierTotal += parseInt(mod.value) || 0;
+                    }
+                }
             }
         }
     }

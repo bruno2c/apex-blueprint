@@ -16,6 +16,7 @@ Welcome to the master manual and guidebook for **APEX BLUEPRINT**, a granular, t
 9. [Global Objectives & Campaign Milestones](#9-global-objectives--campaign-milestones)
 10. [Extensible Facility State & Blueprint Prompt Engine](#10-extensible-facility-state--blueprint-prompt-engine)
 11. [Workshop Monitor & Analytics Dashboard](#11-workshop-monitor--analytics-dashboard)
+12. [Workshop Inventory Tracking System](#12-workshop-inventory-tracking-system)
 
 ---
 
@@ -61,6 +62,13 @@ Your workshop is staffed by three key crew members, each with specific attribute
 ### Morale & Efficiency
 * Companions track a **Morale** metric (0% to 100%).
 * A crew member's active morale acts as their **Efficiency rating**. When morale falls, they become prone to mistakes, adding complications to their assignments.
+
+### Mobility vs. Infrastructure
+* **The Character Roster (`personnel`)**: This is for unique human assets with individual names, personal morale tracks, specialized class roles, and changing psychological traits (like Lucius, Sarah, Leo, and Jax). If an entity can burn out, argue with a teammate, or leave the garage entirely, they live in the personnel roster.
+* **Facility Perks / Labor Nodes (`facility.infrastructure_nodes`)**: This is for collective labor pools, specialized team units, or automated tooling systems that function as static shop enhancements (like your Junior Line Techs, an external cleanroom team, or an automated robotic assembly arm). They do not have individual morale bars—they represent an upgrade to the workshop’s structural capability.
+
+#### 🔁 When does a worker cross the line?
+If the story dictates that a hired individual develops a unique interpersonal relationship with the core team, gains distinct personal stats, or gets promoted to a major engineering role (like Jax did in Week 13), the GM can dynamically "promote" them out of the facility array and push them into the personnel object with a dedicated role and morale tracking matrix.
 
 ---
 
@@ -140,3 +148,14 @@ The workshop monitor interface has been designed for maximum utility and visual 
   * **💵 Capital Trend**: Displays liquid asset levels over time.
   * **🔥 Burn Trend**: Tracks operations costs as a dashed-red trendline.
 * **Local Folder Integration**: The workspace automatically scans the connected local directory for corresponding file naming rules (e.g., `facility/facility_week_{week}.png`) and binds them reactively.
+
+---
+
+## 12. Workshop Inventory Tracking System
+To manage garage logistics and production pipelines, the runtime core tracks the workshop's stock assets and feedstock materials:
+* **Vehicles & Chassis Inventory**: Details track-ready prototype vehicles or base chassis stored in the workshop bays.
+  * Attributes tracked include: `id`, a descriptive `label`, current stock `status` (e.g., Safe Stock), physical `condition` (Optimal, Nominal, Degraded), `powertrain` configurations, `active_quirk` details (such as firmware calibration status), and current estimated `market_value`.
+* **Feedstock & Hardware Components**: Represents raw materials and performance upgrade kits stored for fabrication or test sessions.
+  * Attributes tracked include: category classification, physical quantities (tracked dynamically in units or sets), current quality/condition, and rule modifiers.
+* **Integrated Rule Modifiers**: Just like the workshop's heavy machinery, components in your inventory can feature active `rule_modifier` blocks. When a component is in stock (quantity > 0), its modifiers automatically apply to the PbtA resolution rolls (e.g. Tier-1 ceramic brakes adding `+1` to `TECH` rolls during track performance testing).
+* **Live Dashboard Visualization**: The Workshop Monitor features a dedicated, responsive inventory section presenting all vehicles and components in the form of visual status cards, condition indicators, quirk breakdowns, and formatted market values.

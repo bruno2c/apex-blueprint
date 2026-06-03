@@ -48,6 +48,9 @@ window.renderStateToDashboard = function() {
     // Render facility infrastructure & utilities
     window.renderFacilityInfrastructure();
 
+    // Render workshop inventory tracking
+    window.renderInventory();
+
     if (window.state && window.state.meta) {
         const power = document.getElementById("lbl-meta-power");
         const seg = document.getElementById("lbl-meta-seg");
@@ -932,4 +935,110 @@ window.changeFacilityCarouselWeek = function(delta) {
         window.facilityCarouselWeek = activeWeeks[targetIndex];
         window.renderFacilityCarousel();
     }
+};
+
+// ---------------------------------------------------------------------------
+// Workshop Inventory Renderer
+// ---------------------------------------------------------------------------
+window.renderInventory = function() {
+    const section = document.getElementById("inventory-section");
+    const vehiclesContainer = document.getElementById("inventory-vehicles-container");
+    const componentsContainer = document.getElementById("inventory-components-container");
+
+    if (!section || !vehiclesContainer || !componentsContainer) return;
+
+    if (!window.state || !window.state.inventory) {
+        section.style.display = "none";
+        return;
+    }
+
+    section.style.display = "block";
+
+    // 1. Render Vehicles
+    const vehicles = window.state.inventory.vehicles || [];
+    let vehiclesHtml = "";
+    if (vehicles.length === 0) {
+        vehiclesHtml = `<div style="grid-column: span 3; text-align: center; color: var(--text-muted); font-size: 12px; padding: 20px; border: var(--border-thin); background: rgba(0,0,0,0.1);">No vehicles cataloged in active stock.</div>`;
+    } else {
+        for (const vehicle of vehicles) {
+            const condLower = (vehicle.condition || "").toLowerCase();
+            const isAlert = condLower === "degraded" || condLower === "critical";
+            const cardBorderColor = isAlert ? "var(--comic-red)" : "var(--comic-green)";
+            const condColor = condLower === "optimal" ? "var(--comic-green)" : (condLower === "nominal" ? "var(--text-main)" : "var(--comic-red)");
+
+            const statusBadge = `<span class="objective-status-badge status-active" style="margin-left: auto; background: var(--panel-bg); color: var(--comic-amber); border-color: var(--comic-amber);">${vehicle.status.toUpperCase()}</span>`;
+
+            vehiclesHtml += `
+                <div class="objective-card" style="border-color: ${cardBorderColor};">
+                    <div class="objective-header" style="align-items: center; margin-bottom: 2px;">
+                        <div class="objective-title" style="color: #fff;">${vehicle.label}</div>
+                        ${statusBadge}
+                    </div>
+                    <div style="display: flex; gap: 8px; font-size: 10px; font-weight: bold; text-transform: uppercase; margin-bottom: 6px; color: var(--text-muted);">
+                        <span>ID: ${vehicle.id}</span>
+                        <span>|</span>
+                        <span>Powertrain: <strong style="color: var(--text-main);">${vehicle.powertrain}</strong></span>
+                    </div>
+                    <div style="font-size: 11px; background: rgba(0,0,0,0.2); padding: 8px; border: var(--border-thin); border-color: rgba(255,255,255,0.05); min-height: 44px; line-height: 1.3; margin-bottom: 8px;">
+                        <span style="font-size: 9px; color: var(--text-muted); display: block; font-weight: bold; text-transform: uppercase; margin-bottom: 2px;">Active Quirk</span>
+                        ${vehicle.active_quirk || "None registered."}
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 11px; margin-top: auto; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.05);">
+                        <div>Condition: <strong style="color: ${condColor};">${vehicle.condition}</strong></div>
+                        <div style="font-family: 'JetBrains Mono', monospace; color: var(--comic-amber); font-weight: bold;">
+                            Est. Value: $${formatCurrency(vehicle.market_value)}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    }
+    vehiclesContainer.innerHTML = vehiclesHtml;
+
+    // 2. Render Components
+    const components = window.state.inventory.components || [];
+    let componentsHtml = "";
+    if (components.length === 0) {
+        componentsHtml = `<div style="grid-column: span 3; text-align: center; color: var(--text-muted); font-size: 12px; padding: 20px; border: var(--border-thin); background: rgba(0,0,0,0.1);">No feedstock or raw parts components cataloged.</div>`;
+    } else {
+        for (const comp of components) {
+            const condLower = (comp.condition || "").toLowerCase();
+            const isAlert = condLower === "degraded" || condLower === "blown" || condLower === "critical";
+            const cardBorderColor = isAlert ? "var(--comic-red)" : "var(--comic-amber)";
+            const condColor = condLower === "optimal" ? "var(--comic-green)" : (condLower === "nominal" ? "var(--text-main)" : "var(--comic-red)");
+
+            const quantityBadge = `<span class="objective-status-badge status-active" style="margin-left: auto; background: var(--panel-bg); color: var(--text-main); border-color: var(--comic-amber); font-weight: bold;">${comp.quantity} ${comp.unit}</span>`;
+
+            let ruleModHtml = "";
+            if (comp.rule_modifier && comp.rule_modifier.target && comp.rule_modifier.target !== "NONE") {
+                const valSign = comp.rule_modifier.value >= 0 ? `+${comp.rule_modifier.value}` : comp.rule_modifier.value;
+                ruleModHtml = `
+                    <div style="font-size: 11px; margin-top: 6px; padding: 4px 8px; background: rgba(0,0,0,0.15); border-left: 2px solid ${cardBorderColor}; color: var(--text-main);">
+                        <strong>Roll Modifier:</strong> ${valSign} to ${comp.rule_modifier.target} on <em>"${comp.rule_modifier.trigger}"</em>
+                    </div>
+                `;
+            }
+
+            componentsHtml += `
+                <div class="objective-card" style="border-color: ${cardBorderColor};">
+                    <div class="objective-header" style="align-items: center; margin-bottom: 2px;">
+                        <div class="objective-title" style="color: #fff;">${comp.label}</div>
+                        ${quantityBadge}
+                    </div>
+                    <div style="font-size: 10px; color: var(--text-muted); font-weight: bold; text-transform: uppercase; margin-bottom: 6px;">
+                        ${comp.category}
+                    </div>
+                    <div style="font-size: 11px; background: rgba(0,0,0,0.2); padding: 8px; border: var(--border-thin); border-color: rgba(255,255,255,0.05); min-height: 44px; line-height: 1.3; margin-bottom: 4px;">
+                        <span style="font-size: 9px; color: var(--text-muted); display: block; font-weight: bold; text-transform: uppercase; margin-bottom: 2px;">Condition & Context</span>
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <span>Status: <strong style="color: ${condColor};">${comp.condition}</strong></span>
+                            <span style="font-size: 9px; color: var(--text-muted);">ID: ${comp.id}</span>
+                        </div>
+                    </div>
+                    ${ruleModHtml}
+                </div>
+            `;
+        }
+    }
+    componentsContainer.innerHTML = componentsHtml;
 };
