@@ -838,6 +838,143 @@ textarea {
     border-color: var(--ink-black);
 }
 
+/* Synergy Grid & Cards with Avatars */
+.synergy-relationship-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    margin-top: 10px;
+}
+
+.synergy-relation-card {
+    background: var(--panel-nested);
+    border: var(--border-thick);
+    box-shadow: 4px 4px 0px var(--ink-black);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    transition: border-color 0.2s;
+}
+
+.synergy-relation-card.active-positive {
+    border-color: var(--comic-green);
+}
+.synergy-relation-card.active-neutral {
+    border-color: var(--text-muted);
+}
+.synergy-relation-card.active-negative {
+    border-color: var(--comic-red);
+}
+
+.synergy-avatars-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    width: 100%;
+}
+
+.synergy-mini-avatar {
+    width: 50px;
+    height: 70px;
+    border: var(--border-thick);
+    border-radius: 25px / 35px;
+    overflow: hidden;
+    background: #102a43;
+    box-shadow: 2px 2px 0px var(--ink-black);
+    flex-shrink: 0;
+    transition: transform 0.2s;
+}
+.synergy-mini-avatar:hover {
+    transform: scale(1.1);
+}
+
+.synergy-mini-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.synergy-connection-icon {
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.3);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: var(--border-thin);
+    box-shadow: 1px 1px 0px var(--ink-black);
+}
+
+.synergy-connection-icon.active-positive {
+    color: var(--comic-green);
+    border-color: var(--comic-green);
+}
+.synergy-connection-icon.active-neutral {
+    color: var(--text-muted);
+    border-color: var(--text-muted);
+}
+.synergy-connection-icon.active-negative {
+    color: var(--comic-red);
+    border-color: var(--comic-red);
+}
+
+.synergy-badge {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: var(--border-thin);
+}
+.synergy-badge.active-positive {
+    background: rgba(72, 187, 120, 0.15);
+    color: var(--comic-green);
+    border-color: var(--comic-green);
+}
+.synergy-badge.active-neutral {
+    background: rgba(160, 174, 192, 0.15);
+    color: var(--text-muted);
+    border-color: var(--text-muted);
+}
+.synergy-badge.active-negative {
+    background: rgba(245, 101, 101, 0.15);
+    color: var(--comic-red);
+    border-color: var(--comic-red);
+}
+
+.synergy-mini-visual-bar {
+    display: flex;
+    gap: 3px;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.synergy-mini-cell {
+    width: 18px;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: var(--border-thin);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+.synergy-mini-cell.fill-positive {
+    background-color: var(--comic-green);
+    border-color: var(--ink-black);
+}
+.synergy-mini-cell.fill-neutral {
+    background-color: var(--text-muted);
+    border-color: var(--ink-black);
+}
+.synergy-mini-cell.fill-negative {
+    background-color: var(--comic-red);
+    border-color: var(--ink-black);
+}
+
 /* Analytics Roster Tab Styling */
 .analytics-grid {
     display: grid;

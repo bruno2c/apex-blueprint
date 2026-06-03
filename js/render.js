@@ -83,7 +83,29 @@ window.renderStateToDashboard = function() {
 };
 
 // ---------------------------------------------------------------------------
-// Crew Roster (character cards + synergy bridges)
+// Resolve character avatar source (local FS fallback support)
+// ---------------------------------------------------------------------------
+window.getCharacterAvatarSrc = async function(key) {
+    let imgSrc = `images/${key.toLowerCase()}_avatar.png`;
+    const baseChars = ["lucius", "sarah", "leo"];
+    if (!baseChars.includes(key.toLowerCase()) && window.dirHandle) {
+        try {
+            const permitted = await window.verifyDirectoryPermission(false);
+            if (permitted) {
+                const avatarsDir = await window.dirHandle.getDirectoryHandle("avatars", { create: false });
+                const fileHandle = await avatarsDir.getFileHandle(`${key.toLowerCase()}_avatar.png`, { create: false });
+                const file = await fileHandle.getFile();
+                imgSrc = URL.createObjectURL(file);
+            }
+        } catch (e) {
+            console.debug(`Local avatar for new char ${key} not found in avatars/ directory.`);
+        }
+    }
+    return imgSrc;
+};
+
+// ---------------------------------------------------------------------------
+// Crew Roster & Synergy Relationships
 // ---------------------------------------------------------------------------
 window.updateCharacterUIPanels = async function() {
     const container = document.getElementById("crew-roster-container");
@@ -138,22 +160,7 @@ window.updateCharacterUIPanels = async function() {
             ? `style="color: var(--comic-amber);"`
             : `style="color: #fff;"`;
 
-        // Resolve avatar: local FS for new chars, otherwise static images/
-        let imgSrc = `images/${key.toLowerCase()}_avatar.png`;
-        const baseChars = ["lucius", "sarah", "leo"];
-        if (!baseChars.includes(key.toLowerCase()) && window.dirHandle) {
-            try {
-                const permitted = await window.verifyDirectoryPermission(false);
-                if (permitted) {
-                    const avatarsDir = await window.dirHandle.getDirectoryHandle("avatars", { create: false });
-                    const fileHandle = await avatarsDir.getFileHandle(`${key.toLowerCase()}_avatar.png`, { create: false });
-                    const file = await fileHandle.getFile();
-                    imgSrc = URL.createObjectURL(file);
-                }
-            } catch (e) {
-                console.debug(`Local avatar for new char ${key} not found in avatars/ directory.`);
-            }
-        }
+        const imgSrc = await window.getCharacterAvatarSrc(key);
 
         const descriptionHtml = charData.description
             ? `<div class="crew-desc">"${charData.description}"</div>`
@@ -185,53 +192,84 @@ window.updateCharacterUIPanels = async function() {
             </div>
         `;
     }
-
-    // Synergy relationship cards
-    const synergyObj = window.state.personnel.synergy || {};
-    for (const [synKey, synVal] of Object.entries(synergyObj)) {
-        const parts = synKey.split("_and_");
-        if (parts.length !== 2) continue;
-
-        const name1 = nameMap[parts[0]] || parts[0].toUpperCase();
-        const name2 = nameMap[parts[1]] || parts[1].toUpperCase();
-
-        const val = Math.min(Math.max(parseInt(synVal, 10) || 0, -3), 3);
-
-        let colorClass = "active-neutral";
-        let label = "STANDARD ALIGNMENT";
-        if (val > 0) { colorClass = "active-positive"; label = "COOPERATIVE EFFICIENCY"; }
-        else if (val < 0) { colorClass = "active-negative"; label = "ACTIVE FRICTION NODE"; }
-
-        const formattedVal = val > 0 ? `+${val}` : val;
-
-        let cellsHtml = "";
-        for (let i = -3; i <= 3; i++) {
-            let fillClass = "";
-            if (i === val) {
-                if (val > 0) fillClass = "fill-positive";
-                else if (val < 0) fillClass = "fill-negative";
-                else fillClass = "fill-neutral";
-            }
-            cellsHtml += `<div class="synergy-block-cell ${fillClass}"></div>`;
-        }
-
-        html += `
-            <div class="synergy-bridge-panel ${colorClass}">
-                <div class="synergy-header">🤝 RELATIONSHIP</div>
-                <div class="synergy-header" style="font-size: 11px; color: var(--text-muted); margin-top: -6px;">
-                    ${name1} ✦ ${name2}
-                </div>
-                <div class="synergy-indicator-label ${colorClass}">
-                    ${label} (${formattedVal})
-                </div>
-                <div class="synergy-visual-bar">
-                    ${cellsHtml}
-                </div>
-            </div>
-        `;
-    }
-
     container.innerHTML = html;
+
+    // Render synergy section
+    const synergySection = document.getElementById("synergy-section");
+    const synergyContainer = document.getElementById("synergy-relationship-container");
+    const synergyObj = window.state.personnel.synergy || {};
+    const synergyKeys = Object.keys(synergyObj).filter(synKey => {
+        const parts = synKey.split("_and_");
+        return parts.length === 2;
+    });
+
+    if (synergySection && synergyContainer) {
+        if (synergyKeys.length > 0) {
+            synergySection.style.display = "block";
+            let synergyHtml = "";
+            for (const synKey of synergyKeys) {
+                const parts = synKey.split("_and_");
+                const charKey1 = parts[0];
+                const charKey2 = parts[1];
+                const name1 = nameMap[charKey1] || charKey1.toUpperCase();
+                const name2 = nameMap[charKey2] || charKey2.toUpperCase();
+                const synVal = synergyObj[synKey];
+                const val = Math.min(Math.max(parseInt(synVal, 10) || 0, -3), 3);
+
+                let colorClass = "active-neutral";
+                let iconSymbol = "🤝";
+                let label = "STANDARD ALIGNMENT";
+                if (val > 0) {
+                    colorClass = "active-positive";
+                    iconSymbol = "🤝";
+                    label = "COOPERATIVE EFFICIENCY";
+                } else if (val < 0) {
+                    colorClass = "active-negative";
+                    iconSymbol = val === -3 ? "💔" : "⚡";
+                    label = "ACTIVE FRICTION NODE";
+                }
+
+                const formattedVal = val > 0 ? `+${val}` : val;
+
+                let cellsHtml = "";
+                for (let i = -3; i <= 3; i++) {
+                    let fillClass = "";
+                    if (i === val) {
+                        if (val > 0) fillClass = "fill-positive";
+                        else if (val < 0) fillClass = "fill-negative";
+                        else fillClass = "fill-neutral";
+                    }
+                    cellsHtml += `<div class="synergy-mini-cell ${fillClass}"></div>`;
+                }
+
+                const avatarSrc1 = await window.getCharacterAvatarSrc(charKey1);
+                const avatarSrc2 = await window.getCharacterAvatarSrc(charKey2);
+
+                synergyHtml += `
+                    <div class="synergy-relation-card ${colorClass}" title="${name1} & ${name2}: ${label}">
+                        <div class="synergy-avatars-row">
+                            <div class="synergy-mini-avatar" title="${name1}">
+                                <img src="${avatarSrc1}" alt="${name1}" onerror="this.style.display = 'none'">
+                            </div>
+                            <div class="synergy-connection-icon ${colorClass}">${iconSymbol}</div>
+                            <div class="synergy-mini-avatar" title="${name2}">
+                                <img src="${avatarSrc2}" alt="${name2}" onerror="this.style.display = 'none'">
+                            </div>
+                        </div>
+                        <div class="synergy-badge ${colorClass}">
+                            ${name1} ✦ ${name2} (${formattedVal})
+                        </div>
+                        <div class="synergy-mini-visual-bar">
+                            ${cellsHtml}
+                        </div>
+                    </div>
+                `;
+            }
+            synergyContainer.innerHTML = synergyHtml;
+        } else {
+            synergySection.style.display = "none";
+        }
+    }
 };
 
 // ---------------------------------------------------------------------------
