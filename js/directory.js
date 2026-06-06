@@ -17,7 +17,7 @@ window.localFilesMap = {}; // { [week]: Boolean }
 // ---------------------------------------------------------------------------
 // IndexedDB — persists the FileSystemDirectoryHandle across page reloads
 // ---------------------------------------------------------------------------
-function saveDirHandle(handle, campaignId = null) {
+window.saveDirHandle = function(handle, campaignId = null) {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open("ApexBlueprintDB", 1);
         request.onupgradeneeded = (e) => {
@@ -39,32 +39,37 @@ function saveDirHandle(handle, campaignId = null) {
         };
         request.onerror = () => reject(request.error);
     });
-}
+};
 
-function loadDirHandle(campaignId = null) {
+window.loadDirHandle = function(campaignId = null) {
     return new Promise((resolve, reject) => {
-        const request = indexedDB.open("ApexBlueprintDB", 1);
-        request.onupgradeneeded = (e) => {
-            const db = e.target.result;
-            if (!db.objectStoreNames.contains("handles")) {
-                db.createObjectStore("handles");
+        try {
+            if (!window.indexedDB) {
+                resolve(null);
+                return;
             }
-        };
-        request.onsuccess = (e) => {
-            const db = e.target.result;
-            const tx = db.transaction("handles", "readonly");
-            const store = tx.objectStore("handles");
-            const getReq = store.get(campaignId || "dirHandle");
-            getReq.onsuccess = () => resolve(getReq.result);
-            getReq.onerror = () => reject(getReq.error);
-        };
-        request.onerror = () => resolve(null);
+            const request = indexedDB.open("ApexBlueprintDB", 1);
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains("handles")) {
+                    db.createObjectStore("handles");
+                }
+            };
+            request.onsuccess = (e) => {
+                const db = e.target.result;
+                const tx = db.transaction("handles", "readonly");
+                const store = tx.objectStore("handles");
+                const getReq = store.get(campaignId || "dirHandle");
+                getReq.onsuccess = () => resolve(getReq.result);
+                getReq.onerror = () => reject(getReq.error);
+            };
+            request.onerror = () => resolve(null);
+        } catch (e) {
+            console.warn("IndexedDB access is restricted or unavailable:", e);
+            resolve(null);
+        }
     });
-}
-
-// Expose handle persistence for external modules
-window.loadDirHandle = (campaignId = null) => loadDirHandle(campaignId);
-window.saveDirHandle = (handle, campaignId = null) => saveDirHandle(handle, campaignId);
+};
 
 // ---------------------------------------------------------------------------
 // Directory selection & permission management
@@ -82,7 +87,7 @@ window.selectLocalDirectory = async function() {
         window.directoryName = handle.name;
         window.directoryStatus = "Connected";
 
-        await saveDirHandle(handle);
+        await window.saveDirHandle(handle);
         await window.scanLocalDirectoryFiles();
         window.renderConfigView();
         window.renderStorybookView();
@@ -129,7 +134,7 @@ window.selectAndBootstrapNewCampaignDirectory = async function() {
         window.directoryName = handle.name;
         window.directoryStatus = "Connected";
 
-        await saveDirHandle(handle);
+        await window.saveDirHandle(handle);
         await window.scanLocalDirectoryFiles();
         window.renderConfigView();
         window.renderStorybookView();
