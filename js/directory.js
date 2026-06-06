@@ -17,7 +17,7 @@ window.localFilesMap = {}; // { [week]: Boolean }
 // ---------------------------------------------------------------------------
 // IndexedDB — persists the FileSystemDirectoryHandle across page reloads
 // ---------------------------------------------------------------------------
-function saveDirHandle(handle) {
+function saveDirHandle(handle, campaignId = null) {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open("ApexBlueprintDB", 1);
         request.onupgradeneeded = (e) => {
@@ -31,6 +31,9 @@ function saveDirHandle(handle) {
             const tx = db.transaction("handles", "readwrite");
             const store = tx.objectStore("handles");
             store.put(handle, "dirHandle");
+            if (campaignId) {
+                store.put(handle, campaignId);
+            }
             tx.oncomplete = () => resolve();
             tx.onerror = () => reject(tx.error);
         };
@@ -38,7 +41,7 @@ function saveDirHandle(handle) {
     });
 }
 
-function loadDirHandle() {
+function loadDirHandle(campaignId = null) {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open("ApexBlueprintDB", 1);
         request.onupgradeneeded = (e) => {
@@ -51,7 +54,7 @@ function loadDirHandle() {
             const db = e.target.result;
             const tx = db.transaction("handles", "readonly");
             const store = tx.objectStore("handles");
-            const getReq = store.get("dirHandle");
+            const getReq = store.get(campaignId || "dirHandle");
             getReq.onsuccess = () => resolve(getReq.result);
             getReq.onerror = () => reject(getReq.error);
         };
@@ -60,8 +63,8 @@ function loadDirHandle() {
 }
 
 // Expose handle persistence for external modules
-window.loadDirHandle = loadDirHandle;
-window.saveDirHandle = saveDirHandle;
+window.loadDirHandle = (campaignId = null) => loadDirHandle(campaignId);
+window.saveDirHandle = (handle, campaignId = null) => saveDirHandle(handle, campaignId);
 
 // ---------------------------------------------------------------------------
 // Directory selection & permission management

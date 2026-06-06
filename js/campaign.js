@@ -211,6 +211,9 @@ window.compileMasterPrompt = function() {
     window.state.campaignName = `Campaign: ${window.state.meta.powertrain} ${window.state.meta.segment} (W${window.state.week})`;
 
     window.saveState();
+    if (window.dirHandle && typeof window.saveDirHandle === "function") {
+        window.saveDirHandle(window.dirHandle, window.state.campaignId);
+    }
     window.renderStateToDashboard();
     window.renderStorybookView();
     window.renderConfigView();
@@ -246,16 +249,40 @@ window.loadCampaignFromSlot = async function(campaignId) {
     const list = window.getCampaignsList();
     const campaign = list.find(c => c.id === campaignId);
     if (campaign) {
-        // Prompt to select the directory for this campaign
-        if (window.showDirectoryPicker) {
+        let handle = null;
+        if (typeof window.loadDirHandle === "function") {
+            handle = await window.loadDirHandle(campaignId);
+        }
+
+        if (handle) {
+            window.dirHandle = handle;
+            window.directoryName = handle.name;
+            try {
+                const permitted = await window.verifyDirectoryPermission(true);
+                if (permitted) {
+                    window.directoryStatus = "Connected";
+                    if (typeof window.saveDirHandle === "function") {
+                        await window.saveDirHandle(handle, campaignId);
+                    }
+                    await window.scanLocalDirectoryFiles();
+                    window.triggerToast("⚡ AUTOMATIC RECONNECTION", `Reconnected to folder: ${handle.name}`);
+                } else {
+                    window.directoryStatus = "Re-auth Required";
+                }
+            } catch (e) {
+                console.warn("Reconnection failed:", e);
+                window.directoryStatus = "Re-auth Required";
+            }
+        } else if (window.showDirectoryPicker) {
+            // Prompt to select the directory for this campaign
             try {
                 window.triggerToast("📂 DIRECTORY REQUIRED", "Please select the workspace folder for this campaign.");
-                const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
-                window.dirHandle = handle;
-                window.directoryName = handle.name;
+                const newHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+                window.dirHandle = newHandle;
+                window.directoryName = newHandle.name;
                 window.directoryStatus = "Connected";
                 if (typeof window.saveDirHandle === "function") {
-                    await window.saveDirHandle(handle);
+                    await window.saveDirHandle(newHandle, campaignId);
                 }
                 await window.scanLocalDirectoryFiles();
             } catch (e) {
@@ -329,6 +356,10 @@ window.loadCampaignFromConnectedFolder = async function() {
             window.state = loadedState;
             localStorage.setItem(window.SAVE_KEY, JSON.stringify(window.state));
             window.saveCampaignToList(window.state);
+
+            if (window.dirHandle && typeof window.saveDirHandle === "function") {
+                await window.saveDirHandle(window.dirHandle, loadedState.campaignId);
+            }
 
             await window.scanLocalDirectoryFiles();
             window.renderStateToDashboard();
