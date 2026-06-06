@@ -127,7 +127,32 @@ window.selectAndBootstrapNewCampaignDirectory = async function() {
         await handle.getDirectoryHandle("backups", { create: true });
         await handle.getDirectoryHandle("storybook", { create: true });
         await handle.getDirectoryHandle("facility", { create: true });
-        await handle.getDirectoryHandle("avatars", { create: true });
+        const avatarsDir = await handle.getDirectoryHandle("avatars", { create: true });
+
+        // Download default crew avatars (Lucius, Sarah, Leo)
+        const avatarsToDownload = ["lucius_avatar.png", "sarah_avatar.png", "leo_avatar.png"];
+        for (const filename of avatarsToDownload) {
+            try {
+                let response;
+                try {
+                    response = await fetch(`images/${filename}`);
+                    if (!response.ok) throw new Error("Relative fetch failed");
+                } catch (fetchErr) {
+                    const githubUrl = `https://raw.githubusercontent.com/bruno2c/apex-blueprint/main/images/${filename}`;
+                    response = await fetch(githubUrl);
+                    if (!response.ok) throw new Error("GitHub fetch failed");
+                }
+
+                const blob = await response.blob();
+                const fileHandle = await avatarsDir.getFileHandle(filename, { create: true });
+                const writable = await fileHandle.createWritable();
+                await writable.write(blob);
+                await writable.close();
+                console.log(`Successfully bootstrapped default avatar: ${filename}`);
+            } catch (err) {
+                console.warn(`Could not bootstrap avatar ${filename}:`, err);
+            }
+        }
 
         // Bind directory state
         window.dirHandle = handle;
@@ -138,7 +163,7 @@ window.selectAndBootstrapNewCampaignDirectory = async function() {
         await window.scanLocalDirectoryFiles();
         window.renderConfigView();
         window.renderStorybookView();
-        window.triggerToast("⚡ DIRECTORY BOOTSTRAPPED", `New folder bound and prepared: ${handle.name}`);
+        window.triggerToast("⚡ DIRECTORY BOOTSTRAPPED", `New folder bound and prepared with crew avatars: ${handle.name}`);
         return true;
     } catch (e) {
         console.error(e);
