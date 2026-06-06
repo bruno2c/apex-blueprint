@@ -80,9 +80,6 @@ window.renderStateToDashboard = function() {
     }
     window.renderRolodexView();
     window.renderAnalyticsView();
-    if (typeof window.onPlannerCharChange === "function") {
-        window.onPlannerCharChange();
-    }
 };
 
 // ---------------------------------------------------------------------------
@@ -159,22 +156,22 @@ window.updateCharacterUIPanels = async function() {
             roleStyle = `style="color: ${moraleColor};"`;
         }
 
-        const statValueStyle = (key === "lucius" || morale === undefined)
-            ? `style="color: var(--comic-amber); font-weight: bold;"`
-            : `style="color: #fff; font-weight: bold;"`;
-
         const imgSrc = await window.getCharacterAvatarSrc(key);
 
         const descriptionHtml = charData.description
-            ? `<div class="crew-desc">"${charData.description}"</div>`
+            ? `<div class="crew-desc" style="margin-top: 4px; font-size: 12px; line-height: 1.35; color: var(--text-main);">"${charData.description}"</div>`
             : "";
 
-        // Helper to render milestone indicator dots
-        const renderMilestoneDots = (milestones) => {
+        // Helper to render dual stat section (Attribute slider -3 to 5 and Leveling dots 0 to 3)
+        const renderStatSection = (label, val, milestones) => {
+            val = val !== undefined ? val : 0;
+            const clampedVal = Math.min(5, Math.max(-3, val));
+            const dotPct = ((clampedVal + 3) / 8) * 100;
+            
             let dots = "";
             for (let i = 1; i <= 3; i++) {
-                let dotColor = "rgba(255,255,255,0.1)";
-                let border = "1px solid rgba(255,255,255,0.15)";
+                let dotColor = "rgba(255,255,255,0.08)";
+                let border = "1px solid rgba(255,255,255,0.12)";
                 let shadow = "";
                 if (i <= milestones) {
                     if (i === 3) {
@@ -186,9 +183,32 @@ window.updateCharacterUIPanels = async function() {
                 }
                 dots += `<div style="flex: 1; height: 3px; background: ${dotColor}; border: ${border}; ${shadow}"></div>`;
             }
+            
+            const thumbColor = clampedVal >= 0 ? "var(--comic-amber)" : "var(--comic-red)";
+            
             return `
-                <div class="milestone-dots" style="display: flex; gap: 2px; margin-top: 3px;" title="Milestones: ${milestones}/3">
-                    ${dots}
+                <div style="margin-bottom: 10px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 10px; font-weight: bold; color: var(--text-muted);">
+                        <span>${label}</span>
+                        <span style="color: #fff; font-family: 'JetBrains Mono', monospace;">${clampedVal >= 0 ? '+' + clampedVal : clampedVal}</span>
+                    </div>
+                    
+                    <!-- Value Bar (-3 to 5) -->
+                    <div style="display: flex; height: 5px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); margin-top: 3px; position: relative;">
+                        <!-- Center tick mark at 0 (37.5% position) -->
+                        <div style="position: absolute; left: 37.5%; top: 0; width: 1px; height: 100%; background: rgba(255,255,255,0.25);"></div>
+                        <!-- Thumb dot -->
+                        <div style="position: absolute; left: ${dotPct}%; top: 50%; transform: translate(-50%, -50%); width: 7px; height: 7px; background: ${thumbColor}; border-radius: 50%; box-shadow: 0 0 4px ${thumbColor};"></div>
+                    </div>
+                    
+                    <!-- Milestone Progression Bar (0 to 3) -->
+                    <div style="display: flex; justify-content: space-between; font-size: 7px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase;">
+                        <span>Leveling</span>
+                        <span>${milestones}/3</span>
+                    </div>
+                    <div style="display: flex; gap: 2px; margin-top: 2px;">
+                        ${dots}
+                    </div>
                 </div>
             `;
         };
@@ -200,9 +220,12 @@ window.updateCharacterUIPanels = async function() {
         if (assignment) {
             let barStr = "";
             let progressLabel = "";
+            let detailsText = "";
+            
             if (assignment.type === "Quiet Period") {
                 barStr = "⚡ QUIET PERIOD";
-                progressLabel = assignment.action;
+                progressLabel = "DOWNTIME ACTIVE";
+                detailsText = `Action: <strong>${assignment.action}</strong>`;
             } else {
                 const total = assignment.total_weeks || (assignment.weeks_remaining !== undefined ? assignment.weeks_remaining + 2 : 4);
                 const remaining = assignment.weeks_remaining !== undefined ? assignment.weeks_remaining : 0;
@@ -210,96 +233,64 @@ window.updateCharacterUIPanels = async function() {
                 for (let i = 0; i < total; i++) {
                     barStr += i < completed ? "█" : "░";
                 }
-                progressLabel = `W${completed}/${total}`;
+                progressLabel = `Week ${completed}/${total}`;
+                detailsText = `Task: <strong>${assignment.action || 'Project Clock Mitigation'}</strong>`;
             }
             
             assignmentHtml = `
-                <div class="crew-assignment-box" style="margin-top: 8px; margin-bottom: 8px; padding: 6px 8px; background: rgba(0,0,0,0.25); border: var(--border-thin); border-color: var(--comic-amber); border-radius: 4px;">
-                    <div style="font-size: 8px; color: var(--comic-amber); font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">Active Assignment</div>
-                    <div style="font-size: 11px; font-weight: bold; color: #fff; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${assignment.action || ''}">${assignment.action || 'No Action'}</div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-family: 'JetBrains Mono', monospace; font-size: 10px;">
-                        <span style="color: var(--comic-green); letter-spacing: 1px;">${barStr}</span>
-                        <span style="color: var(--text-muted); font-size: 9px;">${progressLabel}</span>
+                <div class="crew-assignment-box" style="margin-bottom: 12px; padding: 8px 10px; background: rgba(0,0,0,0.25); border: var(--border-thin); border-color: var(--comic-amber); border-radius: 4px; line-height: 1.4;">
+                    <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                        <span style="font-size: 8px; color: var(--comic-amber); font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">Assignment Ledger</span>
+                        <span style="font-size: 9px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">${progressLabel}</span>
+                    </div>
+                    <div style="font-size: 11px; color: #fff; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${assignment.action || ''}">
+                        ${detailsText}
+                    </div>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--comic-green); margin-top: 4px; letter-spacing: 1px;">
+                        ${barStr}
                     </div>
                 </div>
             `;
         } else {
             assignmentHtml = `
-                <div class="crew-assignment-box" style="margin-top: 8px; margin-bottom: 8px; padding: 6px 8px; background: rgba(0,0,0,0.15); border: 1px dashed rgba(255,255,255,0.1); border-radius: 4px; text-align: center;">
-                    <div style="font-size: 10px; color: var(--text-muted);">No Active Assignment</div>
+                <div class="crew-assignment-box" style="margin-bottom: 12px; padding: 8px 10px; background: rgba(0,0,0,0.15); border: 1px dashed rgba(255,255,255,0.08); border-radius: 4px; text-align: center;">
+                    <div style="font-size: 10px; color: var(--text-muted);">No Active Assignment / Unassigned</div>
                 </div>
             `;
         }
 
-        // Quiet Period Dropdown Selector
-        const assignType = (assignment && assignment.type) || "";
-        const assignAction = (assignment && assignment.action) || "";
-        
-        let selectVal = "active";
-        if (assignType === "Quiet Period") {
-            if (assignAction === "Passive Maintenance") selectVal = "maintenance";
-            else if (assignAction === "Strategic Rest") selectVal = "rest";
-            else if (assignAction === "Inventory Salvage") selectVal = "salvage";
-        }
-        
-        const selectorHtml = `
-            <div style="margin-top: 8px; margin-bottom: 8px;">
-                <label style="font-size: 9px; color: var(--comic-amber); font-weight: bold; display: block; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px;">Quiet Period Action</label>
-                <select class="char-assignment-select" onchange="window.updateCharAssignment('${key}', this.value)" style="width: 100%; font-size: 11px; font-family: 'Inter', sans-serif; background: var(--panel-nested); border: var(--border-thin); color: #fff; padding: 4px; cursor: pointer; box-sizing: border-box;">
-                    <option value="active" ${selectVal === 'active' ? 'selected' : ''}>⚔️ Active dilemma / Mission</option>
-                    <option value="maintenance" ${selectVal === 'maintenance' ? 'selected' : ''}>🔧 Maintenance (Node Repair / +1 Mod)</option>
-                    <option value="rest" ${selectVal === 'rest' ? 'selected' : ''}>🛌 Rest (+20% Morale / Clear Trait)</option>
-                    <option value="salvage" ${selectVal === 'salvage' ? 'selected' : ''}>♻️ Salvage (Scrap Cylindrical Cells)</option>
-                </select>
-            </div>
-        `;
-
         html += `
-            <div class="crew-card" ${borderStyle}>
-                <div class="avatar-pill-container" ${ringBorderStyle}>
-                    <img
-                        src="${imgSrc}"
-                        alt="${displayName}"
-                        onerror="this.style.display = 'none'"
-                    />
-                    <button class="btn-char-desc" onclick="window.editCharDescription('${key}')" title="Edit character description/dossier">📝</button>
-                </div>
-                <div class="crew-info-block">
-                    <div class="crew-name">${displayName}</div>
-                    <div class="crew-role" ${roleStyle}>
-                        ${roleText}
+            <div class="crew-card" ${borderStyle} style="display: flex; flex-direction: column; padding: 16px; min-height: unset;">
+                <!-- Row 1: Avatar + Name & Description side by side -->
+                <div style="display: flex; gap: 16px; align-items: flex-start; width: 100%;">
+                    <div class="avatar-pill-container" ${ringBorderStyle} style="flex-shrink: 0; margin: 0; position: relative;">
+                        <img
+                            src="${imgSrc}"
+                            alt="${displayName}"
+                            onerror="this.style.display = 'none'"
+                        />
+                        <button class="btn-char-desc" onclick="window.editCharDescription('${key}')" title="Edit character dossier">📝</button>
                     </div>
-                    ${descriptionHtml}
+                    <div style="flex: 1; min-width: 0;">
+                        <div class="crew-name" style="font-size: 16px; font-weight: bold; color: var(--comic-amber); margin: 0 0 2px 0;">${displayName}</div>
+                        <div class="crew-role" ${roleStyle} style="font-size: 10px; font-weight: bold; text-transform: uppercase;">
+                            ${roleText}
+                        </div>
+                        ${descriptionHtml}
+                    </div>
+                </div>
+                
+                <!-- Row 2: Full Width Active Assignment & Attribute / Progression grids -->
+                <div style="width: 100%; margin-top: 12px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 12px;">
                     ${assignmentHtml}
-                    ${selectorHtml}
-                    <div class="stat-badge-grid" style="margin-top: 8px;">
+                    <div class="stat-badge-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: rgba(0, 0, 0, 0.2); padding: 8px; border-radius: 4px; border: var(--border-thin); box-sizing: border-box;">
                         <div>
-                            <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                                <span>TECH:</span>
-                                <span ${statValueStyle}>${charData.tech !== undefined ? charData.tech : 0}</span>
-                            </div>
-                            ${renderMilestoneDots((charData.progression && charData.progression.tech_milestones) || 0)}
+                            ${renderStatSection("TECH", charData.tech, (charData.progression && charData.progression.tech_milestones) || 0)}
+                            ${renderStatSection("CHA", charData.cha, (charData.progression && charData.progression.cha_milestones) || 0)}
                         </div>
                         <div>
-                            <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                                <span>CHA:</span>
-                                <span ${statValueStyle}>${charData.cha !== undefined ? charData.cha : 0}</span>
-                            </div>
-                            ${renderMilestoneDots((charData.progression && charData.progression.cha_milestones) || 0)}
-                        </div>
-                        <div>
-                            <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                                <span>LOG:</span>
-                                <span ${statValueStyle}>${charData.log !== undefined ? charData.log : 0}</span>
-                            </div>
-                            ${renderMilestoneDots((charData.progression && charData.progression.log_milestones) || 0)}
-                        </div>
-                        <div>
-                            <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                                <span>PER:</span>
-                                <span ${statValueStyle}>${charData.per !== undefined ? charData.per : 0}</span>
-                            </div>
-                            ${renderMilestoneDots((charData.progression && charData.progression.per_milestones) || 0)}
+                            ${renderStatSection("LOG", charData.log, (charData.progression && charData.progression.log_milestones) || 0)}
+                            ${renderStatSection("PER", charData.per, (charData.progression && charData.progression.per_milestones) || 0)}
                         </div>
                     </div>
                 </div>
@@ -1405,403 +1396,5 @@ window.updateCharAssignment = function(charKey, actionType) {
     window.updateMergedPromptDisplay();
 };
 
-// 4. Interactive Roll Planner: character change handler
-window.onPlannerCharChange = function() {
-    const charSelect = document.getElementById("planner-character");
-    if (!charSelect) return;
-    const charVal = charSelect.value;
-    const assistContainer = document.getElementById("planner-assist-container");
-    const assistNameLabel = document.getElementById("lbl-planner-assist-name");
-    const chkAssist = document.getElementById("chk-planner-synergy-assist");
-    
-    if (chkAssist) chkAssist.checked = false;
-    
-    if (charVal === "sarah" && assistContainer && assistNameLabel) {
-        assistContainer.style.display = "block";
-        assistNameLabel.innerText = "Cousin Leo";
-    } else if (charVal === "leo" && assistContainer && assistNameLabel) {
-        assistContainer.style.display = "block";
-        assistNameLabel.innerText = "Sarah";
-    } else if (assistContainer) {
-        assistContainer.style.display = "none";
-    }
-    
-    window.recalculatePlanner();
-};
 
-// 5. Interactive Roll Planner: recalculate total modifiers
-window.recalculatePlanner = function() {
-    if (!window.state || !window.state.personnel) return;
-    
-    const charSelect = document.getElementById("planner-character");
-    const attrSelect = document.getElementById("planner-attribute");
-    const posSelect = document.getElementById("planner-position");
-    const effSelect = document.getElementById("planner-effect");
-    const taskInput = document.getElementById("planner-task-context");
-    const chkExpend = document.getElementById("chk-planner-expend-capital");
-    const chkAssist = document.getElementById("chk-planner-synergy-assist");
-    
-    if (!charSelect || !attrSelect || !posSelect || !effSelect || !taskInput || !chkExpend) return;
-    
-    const charVal = charSelect.value;
-    const attrVal = attrSelect.value;
-    const contextText = taskInput.value || "";
-    
-    const initialPosition = posSelect.value;
-    const initialEffect = effSelect.value;
-    
-    const spendCapital = chkExpend.checked;
-    const synergyAssist = chkAssist ? chkAssist.checked : false;
-    
-    // Check if capital can be spent
-    if (spendCapital && window.state.cash < 5000) {
-        window.triggerToast("🚨 INSUFFICIENT CAPITAL", "Operational cash is too low to expend extra capital.");
-        chkExpend.checked = false;
-        window.recalculatePlanner();
-        return;
-    }
-    
-    // 1. Base attribute value
-    let baseVal = 0;
-    let isJoint = false;
-    let synergyVal = 0;
-    
-    if (charVal === "lucius") {
-        baseVal = (window.state.personnel.lucius && window.state.personnel.lucius[attrVal]) || 0;
-    } else if (charVal === "sarah") {
-        baseVal = (window.state.personnel.sarah && window.state.personnel.sarah[attrVal]) || 0;
-    } else if (charVal === "leo") {
-        baseVal = (window.state.personnel.leo && window.state.personnel.leo[attrVal]) || 0;
-    } else if (charVal === "sarah_leo") {
-        isJoint = true;
-        const valS = (window.state.personnel.sarah && window.state.personnel.sarah[attrVal]) || 0;
-        const valL = (window.state.personnel.leo && window.state.personnel.leo[attrVal]) || 0;
-        baseVal = Math.max(valS, valL);
-        
-        const synKey = "leo_and_sarah";
-        synergyVal = (window.state.personnel.synergy && window.state.personnel.synergy[synKey]) || 0;
-    } else if (charVal === "lucius_sarah") {
-        isJoint = true;
-        const valLu = (window.state.personnel.lucius && window.state.personnel.lucius[attrVal]) || 0;
-        const valS = (window.state.personnel.sarah && window.state.personnel.sarah[attrVal]) || 0;
-        baseVal = Math.max(valLu, valS);
-        synergyVal = 0;
-    } else if (charVal === "lucius_leo") {
-        isJoint = true;
-        const valLu = (window.state.personnel.lucius && window.state.personnel.lucius[attrVal]) || 0;
-        const valL = (window.state.personnel.leo && window.state.personnel.leo[attrVal]) || 0;
-        baseVal = Math.max(valLu, valL);
-        synergyVal = 0;
-    }
-    
-    if (synergyAssist && (charVal === "sarah" || charVal === "leo")) {
-        const synKey = "leo_and_sarah";
-        synergyVal = (window.state.personnel.synergy && window.state.personnel.synergy[synKey]) || 0;
-    }
-    
-    // 2. Intercept facility / inventory modifiers
-    let baseRollWithMods = window.interceptDiceRoll(attrVal, contextText, 0);
-    
-    // Show elements in DOM
-    const baseDisplay = document.getElementById("planner-calc-base");
-    const modsDisplay = document.getElementById("planner-calc-mods");
-    const formulaDisplay = document.getElementById("planner-calc-formula");
-    const synergyRow = document.getElementById("planner-calc-synergy-row");
-    const synergyDisplay = document.getElementById("planner-calc-synergy");
-    const finalPosDisplay = document.getElementById("planner-calc-position");
-    const finalEffDisplay = document.getElementById("planner-calc-effect");
-    
-    if (baseDisplay) baseDisplay.innerText = (baseVal >= 0 ? `+${baseVal}` : baseVal);
-    if (modsDisplay) modsDisplay.innerText = (baseRollWithMods >= 0 ? `+${baseRollWithMods}` : baseRollWithMods);
-    
-    if (synergyRow && synergyDisplay) {
-        if (isJoint || synergyAssist) {
-            synergyRow.style.display = "block";
-            synergyDisplay.innerText = (synergyVal >= 0 ? `+${synergyVal}` : synergyVal);
-        } else {
-            synergyRow.style.display = "none";
-        }
-    }
-    
-    const totalModifier = baseVal + baseRollWithMods + synergyVal;
-    if (formulaDisplay) {
-        formulaDisplay.innerText = (totalModifier >= 0 ? `+ ${totalModifier}` : `- ${Math.abs(totalModifier)}`);
-        formulaDisplay.dataset.totalModifier = totalModifier;
-    }
-    
-    // 3. Resolve Active Position & Effect tiers
-    const positions = ["controlled", "risky", "desperate"];
-    const effects = ["limited", "standard", "great"];
-    
-    let posIdx = positions.indexOf(initialPosition);
-    let effIdx = effects.indexOf(initialEffect);
-    
-    if (spendCapital) {
-        posIdx = Math.max(0, posIdx - 1);
-    }
-    if (synergyAssist) {
-        effIdx = Math.min(2, effIdx + 1);
-    }
-    
-    const finalPos = positions[posIdx];
-    const finalEff = effects[effIdx];
-    
-    if (finalPosDisplay) {
-        finalPosDisplay.innerText = finalPos;
-        const posColors = { controlled: "var(--comic-green)", risky: "var(--comic-amber)", desperate: "var(--comic-red)" };
-        finalPosDisplay.style.color = posColors[finalPos];
-        formulaDisplay.dataset.finalPosition = finalPos;
-    }
-    if (finalEffDisplay) {
-        finalEffDisplay.innerText = finalEff;
-        const effColors = { great: "var(--comic-green)", standard: "var(--comic-amber)", limited: "var(--comic-red)" };
-        finalEffDisplay.style.color = effColors[finalEff];
-        formulaDisplay.dataset.finalEffect = finalEff;
-    }
-};
-
-// 6. Interactive Roll Planner: Roll simulated dice
-window.executePlannerRoll = function() {
-    const formulaNode = document.getElementById("planner-calc-formula");
-    if (!formulaNode) return;
-    
-    const totalModifier = parseInt(formulaNode.dataset.totalModifier, 10) || 0;
-    const position = formulaNode.dataset.finalPosition || "risky";
-    const effect = formulaNode.dataset.finalEffect || "standard";
-    
-    const charSelect = document.getElementById("planner-character");
-    const attrSelect = document.getElementById("planner-attribute");
-    const taskInput = document.getElementById("planner-task-context");
-    const chkExpend = document.getElementById("chk-planner-expend-capital");
-    
-    if (!charSelect || !attrSelect || !taskInput || !chkExpend) return;
-    
-    const charVal = charSelect.value;
-    const attrVal = attrSelect.value;
-    const taskContext = taskInput.value || "Strategic Operation";
-    const spendCapital = chkExpend.checked;
-    
-    // Simulate dice roll (2d6)
-    const dice1 = Math.floor(Math.random() * 6) + 1;
-    const dice2 = Math.floor(Math.random() * 6) + 1;
-    const baseSum = dice1 + dice2;
-    const totalSum = baseSum + totalModifier;
-    
-    // Roll animation
-    const diceFaces = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
-    const diceDisplay = document.getElementById("planner-dice-display");
-    
-    if (!diceDisplay) return;
-    
-    let animCount = 0;
-    const interval = setInterval(() => {
-        const d1 = Math.floor(Math.random() * 6);
-        const d2 = Math.floor(Math.random() * 6);
-        diceDisplay.innerText = `${diceFaces[d1]} ${diceFaces[d2]}`;
-        animCount++;
-        if (animCount > 6) {
-            clearInterval(interval);
-            
-            diceDisplay.innerText = `${diceFaces[dice1 - 1]} ${diceFaces[dice2 - 1]} = ${totalSum}`;
-            
-            let resultTitle = "";
-            let resultDesc = "";
-            let resultColor = "";
-            let successType = "";
-            
-            if (totalSum >= 10) {
-                successType = "strong";
-                resultTitle = "Strong Success (10+)";
-                resultColor = "var(--comic-green)";
-                const progressUnit = effect === "great" ? 2 : 1;
-                resultDesc = `Clean execution! Progress active prototype/objective milestones by +${progressUnit} units. ${charVal.toUpperCase()} gains +1 Milestone Point in ${attrVal.toUpperCase()}!`;
-            } else if (totalSum >= 7) {
-                successType = "weak";
-                resultTitle = "Weak Success (7-9)";
-                resultColor = "var(--comic-amber)";
-                const tickCount = position === "controlled" ? 1 : (position === "risky" ? 2 : 3);
-                resultDesc = `Success with complications! The task succeeds, but tick ${tickCount} segments on an active project clock (or apply a structural flaw/burnout penalty).`;
-            } else {
-                successType = "miss";
-                resultTitle = "Operational Miss (6-)";
-                resultColor = "var(--comic-red)";
-                const tickCount = position === "controlled" ? 1 : (position === "risky" ? 2 : 3);
-                resultDesc = `Critical setback! Task fails completely. Tick ${tickCount} segments on a Project Clock. If a clock fills, catastrophe triggers!`;
-            }
-            
-            const outcomeArea = document.getElementById("planner-outcome-area");
-            const outcomeTitle = document.getElementById("planner-outcome-title");
-            const outcomeDesc = document.getElementById("planner-outcome-desc");
-            
-            if (outcomeArea && outcomeTitle && outcomeDesc) {
-                outcomeTitle.innerText = resultTitle;
-                outcomeTitle.style.color = resultColor;
-                outcomeDesc.innerText = resultDesc;
-                
-                outcomeArea.dataset.successType = successType;
-                outcomeArea.dataset.totalSum = totalSum;
-                outcomeArea.dataset.character = charVal;
-                outcomeArea.dataset.attribute = attrVal;
-                outcomeArea.dataset.position = position;
-                outcomeArea.dataset.effect = effect;
-                outcomeArea.dataset.taskContext = taskContext;
-                outcomeArea.dataset.spendCapital = spendCapital;
-                
-                outcomeArea.style.display = "block";
-            }
-            
-            window.triggerToast("🎲 DICE RESOLVED", `Total Roll: ${totalSum} (${resultTitle})`);
-        }
-    }, 80);
-};
-
-// 7. Interactive Roll Planner: Commit outcome state delta to campaign
-window.applyPlannerOutcome = function() {
-    const outcomeArea = document.getElementById("planner-outcome-area");
-    if (!outcomeArea) return;
-    
-    const successType = outcomeArea.dataset.successType;
-    const charVal = outcomeArea.dataset.character;
-    const attrVal = outcomeArea.dataset.attribute;
-    const totalSum = parseInt(outcomeArea.dataset.totalSum, 10);
-    const position = outcomeArea.dataset.position;
-    const effect = outcomeArea.dataset.effect;
-    const taskContext = outcomeArea.dataset.taskContext;
-    const spendCapital = outcomeArea.dataset.spendCapital === "true";
-    
-    if (!window.state) return;
-    
-    if (spendCapital) {
-        window.state.cash = Math.max(0, window.state.cash - 5000);
-    }
-    
-    let logMsg = `W${window.state.week}: `;
-    
-    let charsInvolved = [];
-    if (charVal.includes("_")) {
-        charsInvolved = charVal.split("_");
-    } else {
-        charsInvolved = [charVal];
-    }
-    
-    const charNames = {
-        lucius: "Lucius",
-        sarah: "Sarah",
-        leo: "Leo"
-    };
-    
-    const formatName = (key) => charNames[key] || key.toUpperCase();
-    
-    if (successType === "strong") {
-        logMsg += `${charsInvolved.map(formatName).join(" & ")} rolled Strong Success (${totalSum}) on "${taskContext}" (${attrVal.toUpperCase()}). `;
-        
-        for (const cKey of charsInvolved) {
-            const companion = window.state.personnel[cKey];
-            if (companion) {
-                if (!companion.progression) {
-                    companion.progression = { tech_milestones: 0, cha_milestones: 0, log_milestones: 0, per_milestones: 0 };
-                }
-                const milestoneKey = `${attrVal}_milestones`;
-                companion.progression[milestoneKey] = (companion.progression[milestoneKey] || 0) + 1;
-                
-                logMsg += `+1 ${attrVal.toUpperCase()} Milestone for ${formatName(cKey)}. `;
-                
-                if (companion.progression[milestoneKey] >= 3) {
-                    const currentStat = companion[attrVal] || 0;
-                    if (currentStat < 4) {
-                        companion[attrVal] = currentStat + 1;
-                        logMsg += `⭐ PERMANENT UPGRADE: ${formatName(cKey)} upgraded ${attrVal.toUpperCase()} to +${companion[attrVal]}! `;
-                    }
-                    companion.progression[milestoneKey] = 0;
-                }
-            }
-        }
-        
-        if (charVal === "sarah_leo" && window.state.personnel.synergy) {
-            const currentSyn = window.state.personnel.synergy.leo_and_sarah || 0;
-            if (currentSyn < 3) {
-                window.state.personnel.synergy.leo_and_sarah = currentSyn + 1;
-                logMsg += `Synergy increased to +${window.state.personnel.synergy.leo_and_sarah}. `;
-            }
-        }
-        
-    } else if (successType === "weak") {
-        logMsg += `${charsInvolved.map(formatName).join(" & ")} rolled Weak Success (${totalSum}) on "${taskContext}" (${attrVal.toUpperCase()}). `;
-        
-        const tickCount = position === "controlled" ? 1 : (position === "risky" ? 2 : 3);
-        
-        let clocked = false;
-        if (window.state.facility && window.state.facility.project_clocks && window.state.facility.project_clocks.length > 0) {
-            const activeClock = window.state.facility.project_clocks[0];
-            activeClock.filled = Math.min(activeClock.segments, activeClock.filled + tickCount);
-            logMsg += `Ticked clock "${activeClock.title}" by +${tickCount} segments. `;
-            clocked = true;
-            if (activeClock.filled === activeClock.segments) {
-                logMsg += `⚠️ CATASTROPHE: Clock "${activeClock.title}" is full! Penalty: ${activeClock.penalty}. `;
-            }
-        }
-        
-        if (!clocked) {
-            for (const cKey of charsInvolved) {
-                const comp = window.state.personnel[cKey];
-                if (comp && comp.morale !== undefined) {
-                    comp.morale = Math.max(0, comp.morale - 15);
-                    logMsg += `${formatName(cKey)} lost -15% Morale. `;
-                }
-            }
-            if (charVal === "sarah_leo" && window.state.personnel.synergy) {
-                const currentSyn = window.state.personnel.synergy.leo_and_sarah || 0;
-                window.state.personnel.synergy.leo_and_sarah = Math.max(-3, currentSyn - 1);
-                logMsg += `Synergy degraded by -1. `;
-            }
-        }
-        
-    } else {
-        logMsg += `${charsInvolved.map(formatName).join(" & ")} rolled Operational Miss (${totalSum}) on "${taskContext}" (${attrVal.toUpperCase()}). `;
-        
-        const tickCount = position === "controlled" ? 1 : (position === "risky" ? 2 : 3);
-        
-        let clocked = false;
-        if (window.state.facility && window.state.facility.project_clocks && window.state.facility.project_clocks.length > 0) {
-            const activeClock = window.state.facility.project_clocks[0];
-            activeClock.filled = Math.min(activeClock.segments, activeClock.filled + tickCount);
-            logMsg += `Ticked clock "${activeClock.title}" by +${tickCount} segments. `;
-            clocked = true;
-            if (activeClock.filled === activeClock.segments) {
-                logMsg += `⚠️ CATASTROPHE: Clock "${activeClock.title}" is full! Penalty: ${activeClock.penalty}. `;
-            }
-        }
-        
-        if (!clocked) {
-            window.state.cash = Math.max(0, window.state.cash - 15000);
-            logMsg += `Catastrophic damage: lost -$15,000 capital. `;
-            for (const cKey of charsInvolved) {
-                const comp = window.state.personnel[cKey];
-                if (comp && comp.morale !== undefined) {
-                    comp.morale = Math.max(0, comp.morale - 40);
-                    logMsg += `${formatName(cKey)} broke down (-40% Morale). `;
-                }
-            }
-        }
-    }
-    
-    if (!window.state.chronicle) window.state.chronicle = [];
-    window.state.chronicle.push(logMsg);
-    
-    outcomeArea.style.display = "none";
-    
-    const taskInput = document.getElementById("planner-task-context");
-    const chkExpend = document.getElementById("chk-planner-expend-capital");
-    const chkAssist = document.getElementById("chk-planner-synergy-assist");
-    
-    if (taskInput) taskInput.value = "";
-    if (chkExpend) chkExpend.checked = false;
-    if (chkAssist) chkAssist.checked = false;
-    
-    window.saveState();
-    window.renderStateToDashboard();
-    window.updateMergedPromptDisplay();
-    
-    window.triggerToast("💾 STATE COMMITTED", "Mechanical delta saved to campaign ledger.");
-};
 
