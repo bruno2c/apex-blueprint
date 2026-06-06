@@ -179,7 +179,7 @@ window.compileMasterPrompt = function() {
                 cha:  window.stats.cha,
                 log:  window.stats.log,
                 per:  window.stats.per,
-                description: "Founder and visionary designer. Brilliant at structural pivots but currently struggling with severe operational paranoia. Commands boardroom strategy but fails at basic human perception."
+                description: "Founder and lead designer of the workshop, responsible for driving the prototype's high-performance engineering vision and coordinating garage operations."
             },
             sarah: {
                 morale: 100,
@@ -195,7 +195,7 @@ window.compileMasterPrompt = function() {
                 cha: 1,
                 log: 1,
                 per: -1,
-                description: "Veteran fabrication mechanic who anchors the physical assembly jigs. Fiercely loyal, but currently running on pure exhaustion from extreme shop floor overtime."
+                description: "Experienced fabrication mechanic who handles heavy tooling, metalwork, and physical vehicle assembly on the shop floor."
             },
             synergy: { sarah_and_leo: 0 }
         },
