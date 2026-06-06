@@ -59,8 +59,9 @@ function loadDirHandle() {
     });
 }
 
-// Expose loadDirHandle for init.js
+// Expose handle persistence for external modules
 window.loadDirHandle = loadDirHandle;
+window.saveDirHandle = saveDirHandle;
 
 // ---------------------------------------------------------------------------
 // Directory selection & permission management
@@ -157,23 +158,30 @@ window.verifyDirectoryPermission = async function(writeRequired = false) {
     return false;
 };
 
-window.toggleDirectoryConnection = async function() {
-    if (window.directoryStatus === "Connected" || window.directoryStatus === "Re-auth Required") {
-        window.dirHandle = null;
-        window.directoryName = "";
-        window.directoryStatus = "Disconnected";
-        window.localFilesMap = {};
+window.disconnectDirectory = function() {
+    window.dirHandle = null;
+    window.directoryName = "";
+    window.directoryStatus = "Disconnected";
+    window.localFilesMap = {};
+    window.localFacilityFilesMap = {};
 
-        // Remove handle from IndexedDB
-        const request = indexedDB.open("ApexBlueprintDB", 1);
-        request.onsuccess = (e) => {
-            const db = e.target.result;
+    // Remove handle from IndexedDB
+    const request = indexedDB.open("ApexBlueprintDB", 1);
+    request.onsuccess = (e) => {
+        const db = e.target.result;
+        if (db.objectStoreNames.contains("handles")) {
             const tx = db.transaction("handles", "readwrite");
             tx.objectStore("handles").delete("dirHandle");
-        };
+        }
+    };
 
-        window.renderConfigView();
-        window.renderStorybookView();
+    if (typeof window.renderConfigView === "function") window.renderConfigView();
+    if (typeof window.renderStorybookView === "function") window.renderStorybookView();
+};
+
+window.toggleDirectoryConnection = async function() {
+    if (window.directoryStatus === "Connected" || window.directoryStatus === "Re-auth Required") {
+        window.disconnectDirectory();
         window.triggerToast("🔌 DIRECTORY DISCONNECTED", "Folder connection released.");
     } else {
         await window.selectLocalDirectory();

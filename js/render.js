@@ -548,7 +548,7 @@ window.renderWelcomeScreen = function() {
 
     const folderOption = document.getElementById("welcome-folder-option");
     if (folderOption) {
-        folderOption.style.display = window.dirHandle ? "block" : "none";
+        folderOption.style.display = "block";
     }
 };
 

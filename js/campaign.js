@@ -242,10 +242,30 @@ window.compileMasterPrompt = function() {
 // ---------------------------------------------------------------------------
 // Load campaign from a saved slot (localStorage campaign list)
 // ---------------------------------------------------------------------------
-window.loadCampaignFromSlot = function(campaignId) {
+window.loadCampaignFromSlot = async function(campaignId) {
     const list = window.getCampaignsList();
     const campaign = list.find(c => c.id === campaignId);
     if (campaign) {
+        // Prompt to select the directory for this campaign
+        if (window.showDirectoryPicker) {
+            try {
+                window.triggerToast("📂 DIRECTORY REQUIRED", "Please select the workspace folder for this campaign.");
+                const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+                window.dirHandle = handle;
+                window.directoryName = handle.name;
+                window.directoryStatus = "Connected";
+                if (typeof window.saveDirHandle === "function") {
+                    await window.saveDirHandle(handle);
+                }
+                await window.scanLocalDirectoryFiles();
+            } catch (e) {
+                console.warn("Directory selection skipped or cancelled during slot load:", e);
+                window.dirHandle = null;
+                window.directoryName = "";
+                window.directoryStatus = "Disconnected";
+            }
+        }
+
         window.state = campaign.state;
         localStorage.setItem(window.SAVE_KEY, JSON.stringify(window.state));
 
@@ -263,7 +283,26 @@ window.loadCampaignFromSlot = function(campaignId) {
 // Load campaign from connected folder backup
 // ---------------------------------------------------------------------------
 window.loadCampaignFromConnectedFolder = async function() {
-    if (!window.dirHandle) return;
+    if (!window.dirHandle) {
+        if (window.showDirectoryPicker) {
+            try {
+                const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+                window.dirHandle = handle;
+                window.directoryName = handle.name;
+                window.directoryStatus = "Connected";
+                if (typeof window.saveDirHandle === "function") {
+                    await window.saveDirHandle(handle);
+                }
+            } catch (e) {
+                window.triggerToast("🚨 LOAD FAILED", "No folder selected.");
+                return;
+            }
+        } else {
+            window.triggerToast("⚠️ NOT SUPPORTED", "Your browser does not support local directory access.");
+            return;
+        }
+    }
+
     try {
         const permitted = await window.verifyDirectoryPermission(false);
         if (!permitted) {
@@ -291,6 +330,7 @@ window.loadCampaignFromConnectedFolder = async function() {
             localStorage.setItem(window.SAVE_KEY, JSON.stringify(window.state));
             window.saveCampaignToList(window.state);
 
+            await window.scanLocalDirectoryFiles();
             window.renderStateToDashboard();
             window.renderStorybookView();
             window.renderConfigView();
@@ -317,6 +357,11 @@ window.exitToMainMenu = function() {
 
     localStorage.removeItem(window.SAVE_KEY);
     window.state = null;
+
+    // Disconnect the active directory handle on exit to main menu
+    if (typeof window.disconnectDirectory === "function") {
+        window.disconnectDirectory();
+    }
 
     window.setAppState("welcome");
     window.triggerToast("🚪 RETURNED TO MENU", "Timeline session suspended safely.");
