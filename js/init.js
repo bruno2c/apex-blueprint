@@ -17,9 +17,9 @@ window.addEventListener("DOMContentLoaded", () => {
         window.loadPromptsFromFiles();
     }
 
-    // 3. Attempt to restore the active campaign from localStorage
+    // 3. Attempt to restore the active campaign from safe storage
     //    (migration shim in state.js already moved any legacy key data)
-    const localCache = localStorage.getItem(window.SAVE_KEY);
+    const localCache = window.appStorage.getItem(window.SAVE_KEY);
     if (localCache) {
         try {
             window.state = JSON.parse(localCache);

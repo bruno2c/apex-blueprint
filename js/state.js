@@ -6,6 +6,42 @@
 // =============================================================================
 
 // ---------------------------------------------------------------------------
+// Safe in-memory storage fallback for private/incognito browsing
+// ---------------------------------------------------------------------------
+(function() {
+    let localStorageAvailable = false;
+    try {
+        localStorage.setItem("__test__", "1");
+        localStorage.removeItem("__test__");
+        localStorageAvailable = true;
+    } catch (e) {
+        localStorageAvailable = false;
+    }
+
+    const memStorage = {};
+    window.appStorage = {
+        getItem(key) {
+            if (localStorageAvailable) {
+                try { return localStorage.getItem(key); } catch (e) {}
+            }
+            return memStorage[key] || null;
+        },
+        setItem(key, value) {
+            if (localStorageAvailable) {
+                try { localStorage.setItem(key, value); return; } catch (e) {}
+            }
+            memStorage[key] = String(value);
+        },
+        removeItem(key) {
+            if (localStorageAvailable) {
+                try { localStorage.removeItem(key); return; } catch (e) {}
+            }
+            delete memStorage[key];
+        }
+    };
+})();
+
+// ---------------------------------------------------------------------------
 // Default state shape — authoritative definition, used everywhere a fresh
 // state is needed. Spread/clone this instead of re-declaring inline.
 // ---------------------------------------------------------------------------
@@ -180,10 +216,10 @@ window.CAMPAIGN_LIST_KEY = "apex_blueprint_campaign_list";
 // ---------------------------------------------------------------------------
 (function migrateLocalStorageKey() {
     const LEGACY_KEY = "linc_motors_save_slate";
-    const legacyData = localStorage.getItem(LEGACY_KEY);
-    if (legacyData && !localStorage.getItem(window.SAVE_KEY)) {
-        localStorage.setItem(window.SAVE_KEY, legacyData);
-        localStorage.removeItem(LEGACY_KEY);
+    const legacyData = window.appStorage.getItem(LEGACY_KEY);
+    if (legacyData && !window.appStorage.getItem(window.SAVE_KEY)) {
+        window.appStorage.setItem(window.SAVE_KEY, legacyData);
+        window.appStorage.removeItem(LEGACY_KEY);
         console.log("[state.js] Migrated save data from legacy key to apex_blueprint_save_slate.");
     }
 })();
@@ -193,7 +229,7 @@ window.CAMPAIGN_LIST_KEY = "apex_blueprint_campaign_list";
 // ---------------------------------------------------------------------------
 window.saveState = function() {
     if (!window.state) return;
-    localStorage.setItem(window.SAVE_KEY, JSON.stringify(window.state));
+    window.appStorage.setItem(window.SAVE_KEY, JSON.stringify(window.state));
     if (window.state.campaignId) {
         window.saveCampaignToList(window.state);
     }
@@ -203,7 +239,7 @@ window.saveState = function() {
 // Campaign slot management (multi-campaign localStorage list)
 // ---------------------------------------------------------------------------
 window.getCampaignsList = function() {
-    const listJson = localStorage.getItem(window.CAMPAIGN_LIST_KEY);
+    const listJson = window.appStorage.getItem(window.CAMPAIGN_LIST_KEY);
     if (!listJson) return [];
     try {
         return JSON.parse(listJson);
@@ -235,17 +271,17 @@ window.saveCampaignToList = function(stateObj) {
         list.push(campaignEntry);
     }
 
-    localStorage.setItem(window.CAMPAIGN_LIST_KEY, JSON.stringify(list));
+    window.appStorage.setItem(window.CAMPAIGN_LIST_KEY, JSON.stringify(list));
 };
 
 window.deleteCampaignFromList = function(campaignId) {
     let list = window.getCampaignsList();
     list = list.filter(c => c.id !== campaignId);
-    localStorage.setItem(window.CAMPAIGN_LIST_KEY, JSON.stringify(list));
+    window.appStorage.setItem(window.CAMPAIGN_LIST_KEY, JSON.stringify(list));
 
     if (window.state && window.state.campaignId === campaignId) {
         window.state = null;
-        localStorage.removeItem(window.SAVE_KEY);
+        window.appStorage.removeItem(window.SAVE_KEY);
     }
 
     window.renderWelcomeScreen();

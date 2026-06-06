@@ -311,7 +311,7 @@ window.importDataSlateJson = function(event) {
             if (!window.state.facility_images) {
                 window.state.facility_images = {};
             }
-            localStorage.setItem(window.SAVE_KEY, JSON.stringify(window.state));
+            window.appStorage.setItem(window.SAVE_KEY, JSON.stringify(window.state));
 
             window.scanLocalDirectoryFiles().then(() => {
                 window.renderStateToDashboard();

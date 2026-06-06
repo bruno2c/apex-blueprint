@@ -320,7 +320,7 @@ window.restoreDirectoryConnection = async function() {
                 const loadedState = JSON.parse(content);
                 if (loadedState && loadedState.week !== undefined) {
                     window.state = loadedState;
-                    localStorage.setItem(window.SAVE_KEY, JSON.stringify(window.state));
+                    window.appStorage.setItem(window.SAVE_KEY, JSON.stringify(window.state));
                     if (window.state.campaignId) {
                         window.saveCampaignToList(window.state);
                     }
@@ -491,7 +491,7 @@ window.tryLoadCampaignFromBackup = async function(handle) {
         const loadedState = JSON.parse(content);
         if (loadedState && loadedState.week !== undefined) {
             window.state = loadedState;
-            localStorage.setItem(window.SAVE_KEY, JSON.stringify(window.state));
+            window.appStorage.setItem(window.SAVE_KEY, JSON.stringify(window.state));
             if (window.state.campaignId) {
                 window.saveCampaignToList(window.state);
             }

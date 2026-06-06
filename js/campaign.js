@@ -294,7 +294,7 @@ window.loadCampaignFromSlot = async function(campaignId) {
         }
 
         window.state = campaign.state;
-        localStorage.setItem(window.SAVE_KEY, JSON.stringify(window.state));
+        window.appStorage.setItem(window.SAVE_KEY, JSON.stringify(window.state));
 
         window.renderStateToDashboard();
         window.renderStorybookView();
@@ -354,7 +354,7 @@ window.loadCampaignFromConnectedFolder = async function() {
             }
 
             window.state = loadedState;
-            localStorage.setItem(window.SAVE_KEY, JSON.stringify(window.state));
+            window.appStorage.setItem(window.SAVE_KEY, JSON.stringify(window.state));
             window.saveCampaignToList(window.state);
 
             if (window.dirHandle && typeof window.saveDirHandle === "function") {
@@ -386,7 +386,7 @@ window.exitToMainMenu = function() {
         window.saveCampaignToList(window.state);
     }
 
-    localStorage.removeItem(window.SAVE_KEY);
+    window.appStorage.removeItem(window.SAVE_KEY);
     window.state = null;
 
     // Disconnect the active directory handle on exit to main menu
