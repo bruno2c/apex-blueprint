@@ -19,6 +19,9 @@ window.setAppState = function(appState) {
     const btnStory  = document.getElementById("btn-storybook-tab");
     const btnInit   = document.getElementById("btn-init-matrix");
     const btnConfig = document.getElementById("btn-config-tab");
+    const btnAnalytics = document.getElementById("btn-analytics-tab");
+    const btnRolodex = document.getElementById("btn-rolodex-tab");
+    const mainHeader = document.getElementById("main-header");
 
     document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
     document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
@@ -27,29 +30,36 @@ window.setAppState = function(appState) {
         if (welcomeTab) welcomeTab.classList.add("active");
         if (navTabs) navTabs.style.display = "none";
         if (btnExit) btnExit.style.display = "none";
+        if (mainHeader) mainHeader.style.display = "none";
         window.renderWelcomeScreen();
 
     } else if (appState === "wizard") {
+        if (mainHeader) mainHeader.style.display = "flex";
         if (navTabs) {
             navTabs.style.display = "flex";
             if (btnLive)   btnLive.style.display   = "none";
             if (btnStory)  btnStory.style.display  = "none";
+            if (btnAnalytics) btnAnalytics.style.display = "none";
+            if (btnRolodex) btnRolodex.style.display = "none";
+            if (btnConfig) btnConfig.style.display = "none";
             if (btnInit) {
                 btnInit.style.display = "inline-block";
                 btnInit.innerText = "📊 CHARACTER CREATOR";
             }
-            if (btnConfig) btnConfig.style.display = "inline-block";
         }
         if (btnExit) btnExit.style.display = "inline-block";
         window.switchTab("init-matrix");
 
     } else if (appState === "game") {
+        if (mainHeader) mainHeader.style.display = "flex";
         if (navTabs) {
             navTabs.style.display = "flex";
             if (btnLive)   btnLive.style.display   = "inline-block";
             if (btnStory)  btnStory.style.display  = "inline-block";
-            if (btnInit)   btnInit.style.display   = "none";
+            if (btnAnalytics) btnAnalytics.style.display = "inline-block";
+            if (btnRolodex) btnRolodex.style.display = "inline-block";
             if (btnConfig) btnConfig.style.display = "inline-block";
+            if (btnInit)   btnInit.style.display   = "none";
         }
         if (btnExit) btnExit.style.display = "inline-block";
 
@@ -65,7 +75,11 @@ window.setAppState = function(appState) {
 // ---------------------------------------------------------------------------
 // Start new campaign wizard
 // ---------------------------------------------------------------------------
-window.startNewCampaignWizard = function() {
+window.startNewCampaignWizard = async function() {
+    // Prompt for a new local folder selection and bootstrap it
+    const success = await window.selectAndBootstrapNewCampaignDirectory();
+    if (!success) return; // User aborted or conflict occurred
+
     window.stats = { tech: 0, cha: 0, log: 0, per: 0 };
     window.pointPool = 2;
 

@@ -89,6 +89,55 @@ window.selectLocalDirectory = async function() {
     }
 };
 
+window.selectAndBootstrapNewCampaignDirectory = async function() {
+    if (!window.showDirectoryPicker) {
+        window.directoryStatus = "Unsupported";
+        window.renderConfigView();
+        window.triggerToast("⚠️ NOT SUPPORTED", "Your browser does not support local directory access. Use Chrome/Edge/Opera.");
+        return false;
+    }
+    try {
+        const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+        
+        // Check if there is an existing campaign in this folder to prevent overriding
+        let exists = false;
+        try {
+            const backupsDir = await handle.getDirectoryHandle("backups", { create: false });
+            await backupsDir.getFileHandle("campaign_state.json", { create: false });
+            exists = true;
+        } catch (e) {
+            // backups folder or campaign_state.json does not exist
+        }
+
+        if (exists) {
+            window.triggerToast("🚨 FOLDER CONFLICT", "This directory already contains an active campaign. Please choose a new, empty folder.");
+            return false;
+        }
+
+        // Bootstrap folders
+        await handle.getDirectoryHandle("backups", { create: true });
+        await handle.getDirectoryHandle("storybook", { create: true });
+        await handle.getDirectoryHandle("facility", { create: true });
+        await handle.getDirectoryHandle("avatars", { create: true });
+
+        // Bind directory state
+        window.dirHandle = handle;
+        window.directoryName = handle.name;
+        window.directoryStatus = "Connected";
+
+        await saveDirHandle(handle);
+        await window.scanLocalDirectoryFiles();
+        window.renderConfigView();
+        window.renderStorybookView();
+        window.triggerToast("⚡ DIRECTORY BOOTSTRAPPED", `New folder bound and prepared: ${handle.name}`);
+        return true;
+    } catch (e) {
+        console.error(e);
+        window.triggerToast("🚨 BOOTSTRAP FAILED", "Could not connect directory or access denied.");
+        return false;
+    }
+};
+
 window.verifyDirectoryPermission = async function(writeRequired = false) {
     if (!window.dirHandle) return false;
     const opts = { mode: writeRequired ? 'readwrite' : 'read' };
