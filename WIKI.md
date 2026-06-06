@@ -26,9 +26,15 @@ You play as the lead **Architect** operating a startup automotive garage. Your g
 * **Turn-Based Pacing**: Time progresses week by week. Each weekly turn presents you with workshop events, logistics struggles, and mechanical dilemmas.
 * **The Turn Cycle**:
   1. The Game Master (AI) describes the weekly environment and presents active dilemmas.
-  2. You describe your crew's response and assign characters to tasks.
-  3. The Game Master requests attribute rolls based on your description.
-  4. You roll the dice, transmit the result, and resolve the week.
+  2. You describe your crew's response and assign characters to tasks. Characters left unassigned automatically enter a **Quiet Period**.
+  3. The Game Master requests attribute rolls based on your description, determining the **Position** and **Effect** for active tasks.
+  4. You roll the dice, transmit the result, select Quiet Period actions, and resolve the week.
+
+### 💤 Quiet Periods & Downtime Protocols
+Crew members who are not assigned to one of the week's active dilemmas do not sit idle. Instead, they enter a **Quiet Period** to execute safe, non-hazardous downtime protocols. The player selects one of three activities for each resting character:
+1. **Passive Maintenance**: Safely removes the "Degraded" condition from a workshop node or generates a `+1` modifier for the next task attempted in that bay.
+2. **Strategic Rest**: Restores `+20% Morale` and clears negative status conditions (such as *Burnt Out* or *Flipped Out*).
+3. **Inventory Salvage**: Performs a safe check to increment raw material stockpiles (e.g., cylindrical battery cells) or fabricate minor tool assets.
 
 ---
 
@@ -63,6 +69,14 @@ Your workshop is staffed by three key crew members, each with specific attribute
 * Companions track a **Morale** metric (0% to 100%).
 * A crew member's active morale acts as their **Efficiency rating**. When morale falls, they become prone to mistakes, adding complications to their assignments.
 
+### 📈 Character Progression & Leveling
+Characters improve their capabilities over time through active hands-on workshop experience:
+* **Attribute Scores**: Range dynamically from `-3` to `+5` (representing extreme deficiency to legendary expertise).
+* **Milestone Progression**: Each character tracks milestone points (from `0` to `3`) for each of the four attribute nodes (TECH, CHA, LOG, PER).
+* **Earning Milestones**: When a character executes an assignment and rolls a **Strong Success (10+)**, they gain `1` Milestone Point in the attribute used.
+* **Leveling Up**: Accumulating `3` Milestone Points in a given category permanently increases that attribute score by `+1` (resets the milestone tracker to `0`).
+* **Progression Cap**: Attribute upgrades are capped at a baseline of `+4` workshop-wide. Attributes can reach `+5` through temporary modifiers or specialized inventory hardware.
+
 ### Mobility vs. Infrastructure
 * **The Character Roster (`personnel`)**: This is for unique human assets with individual names, personal morale tracks, specialized class roles, and changing psychological traits (like Lucius, Sarah, Leo, and Jax). If an entity can burn out, argue with a teammate, or leave the garage entirely, they live in the personnel roster.
 * **Facility Perks / Labor Nodes (`facility.infrastructure_nodes`)**: This is for collective labor pools, specialized team units, or automated tooling systems that function as static shop enhancements (like your Junior Line Techs, an external cleanroom team, or an automated robotic assembly arm). They do not have individual morale bars—they represent an upgrade to the workshop’s structural capability.
@@ -92,6 +106,29 @@ APEX BLUEPRINT uses a Powered by the Apocalypse (PbtA) resolution system for ris
   * **[10+] Strong Success**: Complete victory. The task is completed cleanly with no structural downsides.
   * **[7-9] Weak Success**: Mixed outcome. The crew succeeds, but it introduces a complication, materials cost, or crew friction.
   * **[6 or Less] Operational Miss**: Failure. Things go critically wrong. Capital drops, morale breaks, components crack, or deadlines are missed.
+
+### 📐 Position & Effect Matrix
+Before any dice are rolled, the Game Master evaluates the context of the task and declares its **Position** (the risk/downside tier) and **Effect** (the reward/upside tier). Standard tasks default to *Risky* position and *Standard* effect.
+
+* **Position (Risk Severity)**: Determines how severe the consequences are on a Weak Success (7-9) or Operational Miss (6 or less).
+  * **Controlled**: Minor risk. Ticking `1` segment on a project clock on a partial success/failure.
+  * **Risky**: Standard risk. Ticking `2` segments on a project clock, or applying standard financial/morale penalties.
+  * **Desperate**: Severe risk. Ticking `3` segments on a project clock, or triggering immediate catastrophic penalties.
+* **Effect (Success Magnitude)**: Determines the outcome scaling on a Strong Success (10+).
+  * **Great**: Yields double progress (`+2` objective units) or clears `2` clock segments.
+  * **Standard**: Yields standard progress (`+1` objective unit) or clears `1` clock segment.
+  * **Limited**: Yields reduced progress (`+0.5` objective units).
+* **Pre-Roll Optimization**: Before committing to a roll, players can optimize their odds:
+  * **Expend Capital**: Spend `$5,000` to shift the task's Position one tier safer (e.g., from *Risky* to *Controlled*).
+  * **Synergy Assist**: Add a second crew member to collaborate. This adds the partner's synergy modifier to the roll and improves the Effect tier by one, but both characters share the consequences of a poor roll.
+
+### ⏱️ Segmented Project Clocks
+To replace instantaneous "sudden explosions" with visible workshop tension, failures or partial successes tick down countdown clocks representing structural fatigue, thermal stress, or impending supply chain bottlenecks.
+
+* **Clock Setting**: On a Weak Success (7-9) or Operational Miss (6 or Less), the Game Master may initiate a Segmented Project Clock (typically `4` or `6` segments, e.g., "Volatile Power Cell" or "Structural Fatigue") under the facility state.
+* **Ticking the Clock**: Poor rolls tick the clock's segments based on the task's Position (*Controlled*: 1 segment, *Risky*: 2 segments, *Desperate*: 3 segments).
+* **Catastrophe Trigger**: The physical/financial disaster (capital drain, permanent machine failure, or severe burnout) only fires if a clock's segments are completely filled.
+* **Mitigation**: Players can assign crew members to dedicated **Repair or Mitigation** tasks during the turn cycle to clear segments of active clocks before they overflow.
 
 ---
 
