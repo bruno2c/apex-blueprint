@@ -260,7 +260,7 @@ window.updateCharacterUIPanels = async function() {
         }
 
         html += `
-            <div class="crew-card" ${borderStyle} style="display: flex; flex-direction: column; padding: 16px; min-height: unset;">
+            <div class="crew-card" ${borderStyle}>
                 <!-- Row 1: Avatar + Name & Description side by side -->
                 <div style="display: flex; gap: 16px; align-items: flex-start; width: 100%;">
                     <div class="avatar-pill-container" ${ringBorderStyle} style="flex-shrink: 0; margin: 0; position: relative;">

@@ -154,8 +154,18 @@ h1 {
 
 .crew-roster-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 20px;
+}
+@media (max-width: 1024px) {
+    .crew-roster-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (max-width: 680px) {
+    .crew-roster-row {
+        grid-template-columns: 1fr;
+    }
 }
 
 .crew-card {
@@ -164,12 +174,9 @@ h1 {
     box-shadow: 4px 4px 0px var(--ink-black);
     padding: 16px;
     display: flex;
-    align-items: center;
-    gap: 20px;
-}
-
-.crew-info-block {
-    flex: 1;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
 }
 .crew-name {
     font-family: "Permanent Marker", cursive;
