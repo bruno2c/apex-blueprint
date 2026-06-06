@@ -1252,6 +1252,42 @@ textarea {
     animation: flashing-alert-anim 0.8s infinite !important;
 }
 
+/* 📐 APEX BLUEPRINT: NEW MECHANICS INTEGRATION STYLES */
 
+/* Circular Clock animations */
+@keyframes flash-red {
+    0% { opacity: 1; filter: drop-shadow(0 0 1px var(--comic-red)); }
+    50% { opacity: 0.6; filter: drop-shadow(0 0 8px var(--comic-red)); }
+    100% { opacity: 1; filter: drop-shadow(0 0 1px var(--comic-red)); }
+}
+.flashing-clock-filled {
+    animation: flash-red 1.2s infinite;
+}
 
+/* Crew card enhancements */
+.char-assignment-select {
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.char-assignment-select:hover {
+    border-color: var(--comic-amber);
+    background-color: rgba(255, 255, 255, 0.05);
+}
+.crew-assignment-box {
+    box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.5);
+}
 
+/* Roll Planner inputs */
+.roll-planner-grid select,
+.roll-planner-grid input[type="text"] {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: bold;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+.roll-planner-grid select:focus,
+.roll-planner-grid input[type="text"]:focus {
+    border-color: var(--comic-amber);
+}
+#planner-dice-display {
+    text-shadow: 2px 2px 0px var(--ink-black);
+}

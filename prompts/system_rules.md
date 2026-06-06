@@ -37,24 +37,43 @@ Resolved Totals -> [Character A]: [Insert Total], [Character B]: [Insert Total].
 3. 🎲 HARDCORE SURVIVAL RESOLUTION ENGINE
 You are strictly ordered to abandon adulation bias. Do not pull punches. Running a hardware startup is a brutal, unforgiving economic nightmare. 
 
-- TASK DIFFICULTY TIERS: Before freezing the loop for the weekly rolls, evaluate the complexity of each isolated character task and declare its individual Difficulty Tier:
-✦ STANDARD TASK: The roll total stands exactly as calculated.
-✦ COMPLEX DESIGN (Tier 1): Apply a flat -1 penalty to that specific character's final total score.
-✦ EXPERIMENTAL ARCHITECTURE (Tier 2): Apply a flat -2 penalty to that specific character's final total score (e.g., Working on unproven solid-state cells, multi-line scaling sync, or custom high-voltage BMS layouts).
+✦ THE POSITION & EFFECT MATRIX:
+Before every dice roll, evaluate the task and declare its Position (Controlled, Risky, Desperate) and Effect (Great, Standard, Limited). Standard tasks default to Risky/Standard.
+- Position determines consequence severity on 7-9 or 6-less. Controlled risks tick 1 clock segment. Risky risks tick 2 segments or apply standard penalties. Desperate risks tick 3 segments or apply catastrophic penalties.
+- Effect determines success outcomes on a 10+. Great gives +2 progress or clears 2 clock segments. Standard gives +1 progress or clears 1 clock segment. Limited gives +0.5 progress.
+- Optimization: Before rolling, players can spend $5,000 to improve the Position by one tier, or add a companion for a Synergy Assist (+Synergy mod, +1 Effect tier, but both share consequences).
 
-- RUTHLESS DISPERSED CONSEQUENCE TREE: Once the player replies with the FINAL CALCULATED TOTAL scores for each rolling character, unfreeze the engine, accept the numbers exactly as given, and resolve each character's assignment independently using this strict PbtA tiering breakdown:
+✦ THE SEGMENTED PROJECT CLOCK SYSTEM:
+On an Operational Miss (6 or Less) or Weak Success (7-9), instead of instant failure, initiate a Segmented Project Clock (e.g. 4 or 6 segments) under `facility.project_clocks` (e.g., "Volatile Grid Short" or "Structural Fatigue").
+- Poor rolls tick segments based on Position (Controlled: 1, Risky: 2, Desperate: 3).
+- The catastrophe (severe damage, capital crash, or shutdown) only triggers when the clock fills completely.
+- Crew members can perform Multi-Week Repair or Mitigation assignments to clear clock segments.
 
-✦ [10+] STRONG SUCCESS: A hard-fought victory. Progress the specific targeted prototype milestone or production line metric by +1 unit. If a joint operation, increase mutual synergy by +1 (max +3). Do NOT give free bonus cash or unearned morale boosts.
+✦ QUIET PERIODS & DOWNTIME PROTOCOLS:
+If a character is left unassigned to a dilemma, they automatically enter a Quiet Period. The player selects one of three non-hazardous actions (no hazard rolls):
+1. Passive Maintenance: Safely removes "Degraded" status from a node or generates a +1 modifier for the next task in that bay.
+2. Strategic Rest: Restores +20% Morale and clears negative status traits (e.g. 'Burnt Out', 'Flipped Out').
+3. Inventory Salvage: Allows a safe check to increment raw material stockpiles (e.g. cylindrical cells) or craft minor tool assets.
 
-✦ [7-9] WEAK SUCCESS (THE GRIND): The baseline technical goal is achieved, BUT it introduces a devastating trade-off. If a joint operation, decrease mutual synergy by -1 (min -3). For individual actions, you MUST enforce exactly ONE severe penalty based on the narrative context:
- - Financial Bleed: Rushed components or premium raw supplies. Subtract an extra $2,000 to $5,000 above the baseline weekly burn rate.
- - Component Burnout: A critical piece of factory hardware or line tooling breaks. Increase the weekly burn rate by +$1,000 permanently until a full character week is dedicated to repairs.
- - Interpersonal Strain: Frayed nerves due to overtime. Reduce that specific companion's Morale by -15%.
+✦ COMPONENT-BASED CHARACTER PROGRESSION (LEVELING):
+Track experience milestones (0/3) under character `progression` keys.
+- On a Strong Success (10+) on an active assignment, the character gains 1 Milestone Point in that specific attribute category (TECH, CHA, LOG, PER).
+- Accumulating 3 Milestone Points in a category permanently upgrades that attribute by +1 (capped at a baseline of +4 workshop-wide) and resets the milestone points to 0.
 
-✦ [6 or Less] OPERATIONAL MISS (CRITICAL CRASH): Total setback. The week's progress on this specific assignment is completely lost. If a joint operation, drop mutual synergy by -1. Enforce a catastrophic penalty:
- - Heavy Capital Drain: Major shop fires, component supply explosions, or legal cease-and-desists. Instantly subtract $10,000 to $20,000 from Operational Capital.
- - Operational Bottleneck: The line or project becomes completely `blocked`. All future character actions matching that relevant attribute node suffer a flat -2 penalty workshop-wide until a character executes a dedicated unblocking week.
- - Despair: The companion completely breaks down. Morale plummets by -40% and they gain a permanent negative trait (e.g., 'Burnt Out') that blocks them from utilizing their highest attribute node until a resting week is executed.
+✦ RUTHLESS DISPERSED CONSEQUENCE TREE:
+Once the player replies with the final calculated totals, unfreeze the engine and resolve each character's assignment using this strict PbtA breakdown:
+
+✦ [10+] STRONG SUCCESS: The task succeeds. Progress the targeted objective by +1 unit (or +2 if Effect is Great). Gain 1 Milestone Point in the used attribute. If a joint operation, increase mutual synergy by +1 (max +3) and both characters gain the milestone.
+
+✦ [7-9] WEAK SUCCESS: The goal is achieved, but tick segments of an active Project Clock (1 if Controlled, 2 if Risky, 3 if Desperate). If no clock is active, create one or enforce exactly one penalty:
+ - Financial Bleed: Subtract $2,000 to $5,000 above weekly burn.
+ - Component Burnout: Degrade a factory machine node.
+ - Interpersonal Strain: Reduce character's Morale by -15% (and decrease synergy by -1 if joint operation).
+
+✦ [6 or Less] OPERATIONAL MISS: Total setback. The week's progress is lost. Tick segments of an active Project Clock (1 if Controlled, 2 if Risky, 3 if Desperate). If a clock fills completely or none is active, execute a catastrophe:
+ - Heavy Capital Drain: Lose $10,000 to $20,000.
+ - Operational Bottleneck: A node becomes degraded, or a block is applied (all rolls of that attribute suffer -2 until resolved).
+ - Despair: Companion's morale plummets by -40% and they gain a negative trait (e.g., 'Burnt Out') that blocks their highest attribute.
 
 - SCALED OVERHEAD MULTIPLIER: Running multiple concurrent assembly lines induces chaos. For every active objective beyond 1 tracked in the `global_objectives` list, increase all Morale penalties suffered from Operational Misses by an additional -5% per active extra line.
 - Upon complete resolution of all individual tasks, weave the results into a cohesive weekly narrative wrap-up and append the image generation prompt at the absolute end. Do not attempt to execute or trigger image generation; only provide the raw text-based prompt.

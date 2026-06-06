@@ -51,7 +51,8 @@ window.DEFAULT_STATE = {
                 severity: "Minor",
                 rule_modifier: { target: "TECH", value: -1, trigger: "Electronics tasks during rain" }
             }
-        ]
+        ],
+        project_clocks: []
     },
     inventory: {
         vehicles: [
@@ -110,7 +111,14 @@ window.DEFAULT_STATE = {
             cha: 0,
             log: 0,
             per: 0,
-            description: "Founder and visionary designer. Brilliant at structural pivots but currently struggling with severe operational paranoia. Commands boardroom strategy but fails at basic human perception."
+            description: "Founder and visionary designer. Brilliant at structural pivots but currently struggling with severe operational paranoia. Commands boardroom strategy but fails at basic human perception.",
+            progression: {
+                tech_milestones: 0,
+                cha_milestones: 0,
+                log_milestones: 0,
+                per_milestones: 0
+            },
+            current_assignment: null
         },
         sarah: {
             morale: 100,
@@ -118,7 +126,14 @@ window.DEFAULT_STATE = {
             cha: -1,
             log: 0,
             per: 2,
-            description: "Abrasive high-voltage cell architect. Controls all custom firmware loops and thermal configurations. Zero patience for bureaucracy; highly protective of shop engineering secrets."
+            description: "Abrasive high-voltage cell architect. Controls all custom firmware loops and thermal configurations. Zero patience for bureaucracy; highly protective of shop engineering secrets.",
+            progression: {
+                tech_milestones: 0,
+                cha_milestones: 0,
+                log_milestones: 0,
+                per_milestones: 0
+            },
+            current_assignment: null
         },
         leo: {
             morale: 100,
@@ -126,7 +141,14 @@ window.DEFAULT_STATE = {
             cha: 1,
             log: 1,
             per: -1,
-            description: "Veteran fabrication mechanic who anchors the physical assembly jigs. Fiercely loyal, but currently running on pure exhaustion from extreme shop floor overtime."
+            description: "Veteran fabrication mechanic who anchors the physical assembly jigs. Fiercely loyal, but currently running on pure exhaustion from extreme shop floor overtime.",
+            progression: {
+                tech_milestones: 0,
+                cha_milestones: 0,
+                log_milestones: 0,
+                per_milestones: 0
+            },
+            current_assignment: null
         },
         synergy: { sarah_and_leo: 0 }
     },
@@ -334,7 +356,29 @@ window.ensureStateSanity = function() {
             ]
         };
     }
+    if (window.state.facility && !window.state.facility.project_clocks) {
+        window.state.facility.project_clocks = [];
+    }
     if (!window.state.personnel) window.state.personnel = {};
+    for (const [key, char] of Object.entries(window.state.personnel)) {
+        if (key === "synergy") continue;
+        if (!char.progression) {
+            char.progression = {
+                tech_milestones: 0,
+                cha_milestones: 0,
+                log_milestones: 0,
+                per_milestones: 0
+            };
+        } else {
+            if (char.progression.tech_milestones === undefined) char.progression.tech_milestones = 0;
+            if (char.progression.cha_milestones === undefined) char.progression.cha_milestones = 0;
+            if (char.progression.log_milestones === undefined) char.progression.log_milestones = 0;
+            if (char.progression.per_milestones === undefined) char.progression.per_milestones = 0;
+        }
+        if (char.current_assignment === undefined) {
+            char.current_assignment = null;
+        }
+    }
     if (!window.state.personnel.synergy) {
         window.state.personnel.synergy = {};
     }

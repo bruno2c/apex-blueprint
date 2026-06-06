@@ -80,6 +80,9 @@ window.renderStateToDashboard = function() {
     }
     window.renderRolodexView();
     window.renderAnalyticsView();
+    if (typeof window.onPlannerCharChange === "function") {
+        window.onPlannerCharChange();
+    }
 };
 
 // ---------------------------------------------------------------------------
@@ -157,14 +160,99 @@ window.updateCharacterUIPanels = async function() {
         }
 
         const statValueStyle = (key === "lucius" || morale === undefined)
-            ? `style="color: var(--comic-amber);"`
-            : `style="color: #fff;"`;
+            ? `style="color: var(--comic-amber); font-weight: bold;"`
+            : `style="color: #fff; font-weight: bold;"`;
 
         const imgSrc = await window.getCharacterAvatarSrc(key);
 
         const descriptionHtml = charData.description
             ? `<div class="crew-desc">"${charData.description}"</div>`
             : "";
+
+        // Helper to render milestone indicator dots
+        const renderMilestoneDots = (milestones) => {
+            let dots = "";
+            for (let i = 1; i <= 3; i++) {
+                let dotColor = "rgba(255,255,255,0.1)";
+                let border = "1px solid rgba(255,255,255,0.15)";
+                let shadow = "";
+                if (i <= milestones) {
+                    if (i === 3) {
+                        dotColor = "var(--comic-green)";
+                        shadow = "box-shadow: 0 0 3px var(--comic-green);";
+                    } else {
+                        dotColor = "var(--comic-amber)";
+                    }
+                }
+                dots += `<div style="flex: 1; height: 3px; background: ${dotColor}; border: ${border}; ${shadow}"></div>`;
+            }
+            return `
+                <div class="milestone-dots" style="display: flex; gap: 2px; margin-top: 3px;" title="Milestones: ${milestones}/3">
+                    ${dots}
+                </div>
+            `;
+        };
+
+        // Render Assignment Progress Bar
+        const assignment = charData.current_assignment;
+        let assignmentHtml = "";
+        
+        if (assignment) {
+            let barStr = "";
+            let progressLabel = "";
+            if (assignment.type === "Quiet Period") {
+                barStr = "⚡ QUIET PERIOD";
+                progressLabel = assignment.action;
+            } else {
+                const total = assignment.total_weeks || (assignment.weeks_remaining !== undefined ? assignment.weeks_remaining + 2 : 4);
+                const remaining = assignment.weeks_remaining !== undefined ? assignment.weeks_remaining : 0;
+                const completed = Math.max(0, total - remaining);
+                for (let i = 0; i < total; i++) {
+                    barStr += i < completed ? "█" : "░";
+                }
+                progressLabel = `W${completed}/${total}`;
+            }
+            
+            assignmentHtml = `
+                <div class="crew-assignment-box" style="margin-top: 8px; margin-bottom: 8px; padding: 6px 8px; background: rgba(0,0,0,0.25); border: var(--border-thin); border-color: var(--comic-amber); border-radius: 4px;">
+                    <div style="font-size: 8px; color: var(--comic-amber); font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">Active Assignment</div>
+                    <div style="font-size: 11px; font-weight: bold; color: #fff; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${assignment.action || ''}">${assignment.action || 'No Action'}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-family: 'JetBrains Mono', monospace; font-size: 10px;">
+                        <span style="color: var(--comic-green); letter-spacing: 1px;">${barStr}</span>
+                        <span style="color: var(--text-muted); font-size: 9px;">${progressLabel}</span>
+                    </div>
+                </div>
+            `;
+        } else {
+            assignmentHtml = `
+                <div class="crew-assignment-box" style="margin-top: 8px; margin-bottom: 8px; padding: 6px 8px; background: rgba(0,0,0,0.15); border: 1px dashed rgba(255,255,255,0.1); border-radius: 4px; text-align: center;">
+                    <div style="font-size: 10px; color: var(--text-muted);">No Active Assignment</div>
+                </div>
+            `;
+        }
+
+        // Quiet Period Dropdown Selector
+        const assignType = (assignment && assignment.type) || "";
+        const assignAction = (assignment && assignment.action) || "";
+        
+        let selectVal = "active";
+        if (assignType === "Quiet Period") {
+            if (assignAction === "Passive Maintenance") selectVal = "maintenance";
+            else if (assignAction === "Strategic Rest") selectVal = "rest";
+            else if (assignAction === "Inventory Salvage") selectVal = "salvage";
+        }
+        
+        const selectorHtml = `
+            <div style="margin-top: 8px; margin-bottom: 8px;">
+                <label style="font-size: 9px; color: var(--comic-amber); font-weight: bold; display: block; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px;">Quiet Period Action</label>
+                <select class="char-assignment-select" onchange="window.updateCharAssignment('${key}', this.value)" style="width: 100%; font-size: 11px; font-family: 'Inter', sans-serif; background: var(--panel-nested); border: var(--border-thin); color: #fff; padding: 4px; cursor: pointer; box-sizing: border-box;">
+                    <option value="active" ${selectVal === 'active' ? 'selected' : ''}>⚔️ Active dilemma / Mission</option>
+                    <option value="maintenance" ${selectVal === 'maintenance' ? 'selected' : ''}>🔧 Maintenance (Node Repair / +1 Mod)</option>
+                    <option value="rest" ${selectVal === 'rest' ? 'selected' : ''}>🛌 Rest (+20% Morale / Clear Trait)</option>
+                    <option value="salvage" ${selectVal === 'salvage' ? 'selected' : ''}>♻️ Salvage (Scrap Cylindrical Cells)</option>
+                </select>
+            </div>
+        `;
 
         html += `
             <div class="crew-card" ${borderStyle}>
@@ -182,11 +270,37 @@ window.updateCharacterUIPanels = async function() {
                         ${roleText}
                     </div>
                     ${descriptionHtml}
-                    <div class="stat-badge-grid">
-                        <div>TECH: <span ${statValueStyle}>${charData.tech !== undefined ? charData.tech : 0}</span></div>
-                        <div>CHA:  <span ${statValueStyle}>${charData.cha  !== undefined ? charData.cha  : 0}</span></div>
-                        <div>LOG:  <span ${statValueStyle}>${charData.log  !== undefined ? charData.log  : 0}</span></div>
-                        <div>PER:  <span ${statValueStyle}>${charData.per  !== undefined ? charData.per  : 0}</span></div>
+                    ${assignmentHtml}
+                    ${selectorHtml}
+                    <div class="stat-badge-grid" style="margin-top: 8px;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                                <span>TECH:</span>
+                                <span ${statValueStyle}>${charData.tech !== undefined ? charData.tech : 0}</span>
+                            </div>
+                            ${renderMilestoneDots((charData.progression && charData.progression.tech_milestones) || 0)}
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                                <span>CHA:</span>
+                                <span ${statValueStyle}>${charData.cha !== undefined ? charData.cha : 0}</span>
+                            </div>
+                            ${renderMilestoneDots((charData.progression && charData.progression.cha_milestones) || 0)}
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                                <span>LOG:</span>
+                                <span ${statValueStyle}>${charData.log !== undefined ? charData.log : 0}</span>
+                            </div>
+                            ${renderMilestoneDots((charData.progression && charData.progression.log_milestones) || 0)}
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                                <span>PER:</span>
+                                <span ${statValueStyle}>${charData.per !== undefined ? charData.per : 0}</span>
+                            </div>
+                            ${renderMilestoneDots((charData.progression && charData.progression.per_milestones) || 0)}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -830,6 +944,9 @@ window.renderFacilityInfrastructure = function() {
         }
     }
 
+    // Render Bays & Clocks
+    window.renderBaysAndClocks();
+
     // Render Facility Carousel
     window.renderFacilityCarousel();
 };
@@ -1102,3 +1219,589 @@ window.editCharDescription = function(charKey) {
     window.updateMergedPromptDisplay();
     window.triggerToast("DOSSIER UPDATED", `Dossier details updated for ${charKey.toUpperCase()}.`);
 };
+
+// =============================================================================
+// 📐 APEX BLUEPRINT: NEW MECHANICS INTEGRATION
+// =============================================================================
+
+// 1. Draw SVG segmented countdown circle
+window.drawSegmentedCircle = function(total, filled) {
+    if (!total || total <= 0) total = 4;
+    if (filled === undefined || filled < 0) filled = 0;
+    
+    let paths = "";
+    const cx = 50;
+    const cy = 50;
+    const r = 35;
+    const strokeWidth = 8;
+    
+    for (let i = 0; i < total; i++) {
+        const startAngle = i * (360 / total) + 4;
+        const endAngle = (i + 1) * (360 / total) - 4;
+        const isFilled = i < filled;
+        
+        // Convert to Cartesian
+        const startRad = (startAngle - 90) * Math.PI / 180;
+        const endRad = (endAngle - 90) * Math.PI / 180;
+        
+        const x1 = cx + r * Math.cos(startRad);
+        const y1 = cy + r * Math.sin(startRad);
+        const x2 = cx + r * Math.cos(endRad);
+        const y2 = cy + r * Math.sin(endRad);
+        
+        const largeArc = (endAngle - startAngle > 180) ? 1 : 0;
+        const d = `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`;
+        
+        const strokeColor = isFilled ? "var(--comic-red)" : "rgba(255,255,255,0.12)";
+        const pulseClass = (isFilled && filled === total) ? "class=\"flashing-clock-filled\"" : "";
+        
+        paths += `<path d="${d}" stroke="${strokeColor}" stroke-width="${strokeWidth}" fill="none" stroke-linecap="round" ${pulseClass} />`;
+    }
+    
+    const textVal = `${filled}/${total}`;
+    
+    return `
+        <svg viewBox="0 0 100 100" style="width: 100%; height: 100%; display: block;">
+            ${paths}
+            <text x="50" y="55" font-family="'JetBrains Mono', monospace" font-size="16" font-weight="bold" fill="#fff" text-anchor="middle">
+                ${textVal}
+            </text>
+        </svg>
+    `;
+};
+
+// 2. Render Active Bay Modules and Project Clocks
+window.renderBaysAndClocks = function() {
+    const container = document.getElementById("active-bays-container");
+    if (!container) return;
+    
+    if (!window.state || !window.state.facility) {
+        container.innerHTML = `<div style="grid-column: span 3; text-align: center; color: var(--text-muted);">No facility configuration data.</div>`;
+        return;
+    }
+    
+    const bays = window.state.facility.bays || [];
+    const clocks = window.state.facility.project_clocks || [];
+    
+    let html = "";
+    
+    if (bays.length === 0) {
+        html = `<div style="grid-column: span 3; text-align: center; color: var(--text-muted); font-size: 12px; padding: 12px; border: var(--border-thin); background: rgba(0,0,0,0.1);">No bays registered.</div>`;
+    } else {
+        for (const bay of bays) {
+            const bayClocks = clocks.filter(c => c.bay_id === bay.id);
+            
+            let clocksHtml = "";
+            if (bayClocks.length > 0) {
+                for (const clock of bayClocks) {
+                    clocksHtml += `
+                        <div style="display: flex; gap: 12px; align-items: center; margin-top: 12px; background: rgba(0,0,0,0.25); padding: 8px; border: var(--border-thin); border-color: var(--comic-red);">
+                            <div style="width: 60px; height: 60px; flex-shrink: 0;">
+                                ${window.drawSegmentedCircle(clock.segments, clock.filled)}
+                            </div>
+                            <div style="min-width: 0; flex: 1;">
+                                <div style="font-size: 11px; font-weight: bold; color: var(--comic-red); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${clock.title}">${clock.title}</div>
+                                <div style="font-size: 10px; color: var(--text-main); margin-top: 2px;">
+                                    ${clock.filled} / ${clock.segments} segments filled
+                                </div>
+                                <div style="font-size: 9px; color: var(--text-muted); margin-top: 4px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis;" title="${clock.penalty}">
+                                    <strong>PENALTY:</strong> ${clock.penalty}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                clocksHtml = `
+                    <div style="margin-top: 12px; font-size: 10px; color: var(--text-muted); text-align: center; border: 1px dashed rgba(255,255,255,0.05); padding: 8px;">
+                        🟢 No active threat clocks in this bay module.
+                    </div>
+                `;
+            }
+            
+            html += `
+                <div class="objective-card" style="border-color: var(--comic-amber); display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div class="objective-header" style="align-items: center; margin-bottom: 2px;">
+                            <div class="objective-title" style="color: #fff; text-transform: uppercase;">${bay.contents}</div>
+                            <span class="objective-status-badge status-active" style="margin-left: auto; background: var(--panel-bg); color: var(--text-main); border-color: var(--comic-amber); font-size: 8px;">${bay.footprint.toUpperCase()}</span>
+                        </div>
+                        <div style="font-size: 9px; color: var(--text-muted); font-weight: bold; text-transform: uppercase;">
+                            BAY ID: ${bay.id}
+                        </div>
+                    </div>
+                    <div>
+                        ${clocksHtml}
+                    </div>
+                </div>
+            `;
+        }
+    }
+    
+    const orphanClocks = clocks.filter(c => !c.bay_id || !bays.some(b => b.id === c.bay_id));
+    if (orphanClocks.length > 0) {
+        for (const clock of orphanClocks) {
+            html += `
+                <div class="objective-card" style="border-color: var(--comic-red);">
+                    <div class="objective-header" style="align-items: center; margin-bottom: 2px;">
+                        <div class="objective-title" style="color: var(--comic-red); text-transform: uppercase;">⚠️ WORKSPACE THREAT CLOCK</div>
+                    </div>
+                    <div style="display: flex; gap: 12px; align-items: center; margin-top: 8px;">
+                        <div style="width: 60px; height: 60px; flex-shrink: 0;">
+                            ${window.drawSegmentedCircle(clock.segments, clock.filled)}
+                        </div>
+                        <div style="min-width: 0; flex: 1;">
+                            <div style="font-size: 11px; font-weight: bold; color: var(--comic-red); text-transform: uppercase;">${clock.title}</div>
+                            <div style="font-size: 10px; color: var(--text-main); margin-top: 2px;">
+                                ${clock.filled} / ${clock.segments} segments filled
+                            </div>
+                            <div style="font-size: 9px; color: var(--text-muted); margin-top: 4px; line-height: 1.2;">
+                                <strong>PENALTY:</strong> ${clock.penalty}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    }
+    
+    container.innerHTML = html;
+};
+
+// 3. Update character assignment/Quiet Period status
+window.updateCharAssignment = function(charKey, actionType) {
+    if (!window.state || !window.state.personnel) return;
+    const char = window.state.personnel[charKey];
+    if (!char) return;
+    
+    if (actionType === "active") {
+        char.current_assignment = null;
+        window.triggerToast("⚔️ MISSION READY", `${charKey.toUpperCase()} marked as active for dilemmas.`);
+    } else if (actionType === "maintenance") {
+        char.current_assignment = {
+            type: "Quiet Period",
+            action: "Passive Maintenance",
+            status: "In Progress"
+        };
+        window.triggerToast("🔧 PASSIVE MAINTENANCE", `${charKey.toUpperCase()} assigned to passive node maintenance.`);
+    } else if (actionType === "rest") {
+        char.current_assignment = {
+            type: "Quiet Period",
+            action: "Strategic Rest",
+            status: "In Progress"
+        };
+        window.triggerToast("🛌 STRATEGIC REST", `${charKey.toUpperCase()} assigned to Rest and Morale recovery.`);
+    } else if (actionType === "salvage") {
+        char.current_assignment = {
+            type: "Quiet Period",
+            action: "Inventory Salvage",
+            status: "In Progress"
+        };
+        window.triggerToast("♻️ INVENTORY SALVAGE", `${charKey.toUpperCase()} assigned to scrap inventory harvesting.`);
+    }
+    
+    window.saveState();
+    window.renderStateToDashboard();
+    window.updateMergedPromptDisplay();
+};
+
+// 4. Interactive Roll Planner: character change handler
+window.onPlannerCharChange = function() {
+    const charSelect = document.getElementById("planner-character");
+    if (!charSelect) return;
+    const charVal = charSelect.value;
+    const assistContainer = document.getElementById("planner-assist-container");
+    const assistNameLabel = document.getElementById("lbl-planner-assist-name");
+    const chkAssist = document.getElementById("chk-planner-synergy-assist");
+    
+    if (chkAssist) chkAssist.checked = false;
+    
+    if (charVal === "sarah" && assistContainer && assistNameLabel) {
+        assistContainer.style.display = "block";
+        assistNameLabel.innerText = "Cousin Leo";
+    } else if (charVal === "leo" && assistContainer && assistNameLabel) {
+        assistContainer.style.display = "block";
+        assistNameLabel.innerText = "Sarah";
+    } else if (assistContainer) {
+        assistContainer.style.display = "none";
+    }
+    
+    window.recalculatePlanner();
+};
+
+// 5. Interactive Roll Planner: recalculate total modifiers
+window.recalculatePlanner = function() {
+    if (!window.state || !window.state.personnel) return;
+    
+    const charSelect = document.getElementById("planner-character");
+    const attrSelect = document.getElementById("planner-attribute");
+    const posSelect = document.getElementById("planner-position");
+    const effSelect = document.getElementById("planner-effect");
+    const taskInput = document.getElementById("planner-task-context");
+    const chkExpend = document.getElementById("chk-planner-expend-capital");
+    const chkAssist = document.getElementById("chk-planner-synergy-assist");
+    
+    if (!charSelect || !attrSelect || !posSelect || !effSelect || !taskInput || !chkExpend) return;
+    
+    const charVal = charSelect.value;
+    const attrVal = attrSelect.value;
+    const contextText = taskInput.value || "";
+    
+    const initialPosition = posSelect.value;
+    const initialEffect = effSelect.value;
+    
+    const spendCapital = chkExpend.checked;
+    const synergyAssist = chkAssist ? chkAssist.checked : false;
+    
+    // Check if capital can be spent
+    if (spendCapital && window.state.cash < 5000) {
+        window.triggerToast("🚨 INSUFFICIENT CAPITAL", "Operational cash is too low to expend extra capital.");
+        chkExpend.checked = false;
+        window.recalculatePlanner();
+        return;
+    }
+    
+    // 1. Base attribute value
+    let baseVal = 0;
+    let isJoint = false;
+    let synergyVal = 0;
+    
+    if (charVal === "lucius") {
+        baseVal = (window.state.personnel.lucius && window.state.personnel.lucius[attrVal]) || 0;
+    } else if (charVal === "sarah") {
+        baseVal = (window.state.personnel.sarah && window.state.personnel.sarah[attrVal]) || 0;
+    } else if (charVal === "leo") {
+        baseVal = (window.state.personnel.leo && window.state.personnel.leo[attrVal]) || 0;
+    } else if (charVal === "sarah_leo") {
+        isJoint = true;
+        const valS = (window.state.personnel.sarah && window.state.personnel.sarah[attrVal]) || 0;
+        const valL = (window.state.personnel.leo && window.state.personnel.leo[attrVal]) || 0;
+        baseVal = Math.max(valS, valL);
+        
+        const synKey = "leo_and_sarah";
+        synergyVal = (window.state.personnel.synergy && window.state.personnel.synergy[synKey]) || 0;
+    } else if (charVal === "lucius_sarah") {
+        isJoint = true;
+        const valLu = (window.state.personnel.lucius && window.state.personnel.lucius[attrVal]) || 0;
+        const valS = (window.state.personnel.sarah && window.state.personnel.sarah[attrVal]) || 0;
+        baseVal = Math.max(valLu, valS);
+        synergyVal = 0;
+    } else if (charVal === "lucius_leo") {
+        isJoint = true;
+        const valLu = (window.state.personnel.lucius && window.state.personnel.lucius[attrVal]) || 0;
+        const valL = (window.state.personnel.leo && window.state.personnel.leo[attrVal]) || 0;
+        baseVal = Math.max(valLu, valL);
+        synergyVal = 0;
+    }
+    
+    if (synergyAssist && (charVal === "sarah" || charVal === "leo")) {
+        const synKey = "leo_and_sarah";
+        synergyVal = (window.state.personnel.synergy && window.state.personnel.synergy[synKey]) || 0;
+    }
+    
+    // 2. Intercept facility / inventory modifiers
+    let baseRollWithMods = window.interceptDiceRoll(attrVal, contextText, 0);
+    
+    // Show elements in DOM
+    const baseDisplay = document.getElementById("planner-calc-base");
+    const modsDisplay = document.getElementById("planner-calc-mods");
+    const formulaDisplay = document.getElementById("planner-calc-formula");
+    const synergyRow = document.getElementById("planner-calc-synergy-row");
+    const synergyDisplay = document.getElementById("planner-calc-synergy");
+    const finalPosDisplay = document.getElementById("planner-calc-position");
+    const finalEffDisplay = document.getElementById("planner-calc-effect");
+    
+    if (baseDisplay) baseDisplay.innerText = (baseVal >= 0 ? `+${baseVal}` : baseVal);
+    if (modsDisplay) modsDisplay.innerText = (baseRollWithMods >= 0 ? `+${baseRollWithMods}` : baseRollWithMods);
+    
+    if (synergyRow && synergyDisplay) {
+        if (isJoint || synergyAssist) {
+            synergyRow.style.display = "block";
+            synergyDisplay.innerText = (synergyVal >= 0 ? `+${synergyVal}` : synergyVal);
+        } else {
+            synergyRow.style.display = "none";
+        }
+    }
+    
+    const totalModifier = baseVal + baseRollWithMods + synergyVal;
+    if (formulaDisplay) {
+        formulaDisplay.innerText = (totalModifier >= 0 ? `+ ${totalModifier}` : `- ${Math.abs(totalModifier)}`);
+        formulaDisplay.dataset.totalModifier = totalModifier;
+    }
+    
+    // 3. Resolve Active Position & Effect tiers
+    const positions = ["controlled", "risky", "desperate"];
+    const effects = ["limited", "standard", "great"];
+    
+    let posIdx = positions.indexOf(initialPosition);
+    let effIdx = effects.indexOf(initialEffect);
+    
+    if (spendCapital) {
+        posIdx = Math.max(0, posIdx - 1);
+    }
+    if (synergyAssist) {
+        effIdx = Math.min(2, effIdx + 1);
+    }
+    
+    const finalPos = positions[posIdx];
+    const finalEff = effects[effIdx];
+    
+    if (finalPosDisplay) {
+        finalPosDisplay.innerText = finalPos;
+        const posColors = { controlled: "var(--comic-green)", risky: "var(--comic-amber)", desperate: "var(--comic-red)" };
+        finalPosDisplay.style.color = posColors[finalPos];
+        formulaDisplay.dataset.finalPosition = finalPos;
+    }
+    if (finalEffDisplay) {
+        finalEffDisplay.innerText = finalEff;
+        const effColors = { great: "var(--comic-green)", standard: "var(--comic-amber)", limited: "var(--comic-red)" };
+        finalEffDisplay.style.color = effColors[finalEff];
+        formulaDisplay.dataset.finalEffect = finalEff;
+    }
+};
+
+// 6. Interactive Roll Planner: Roll simulated dice
+window.executePlannerRoll = function() {
+    const formulaNode = document.getElementById("planner-calc-formula");
+    if (!formulaNode) return;
+    
+    const totalModifier = parseInt(formulaNode.dataset.totalModifier, 10) || 0;
+    const position = formulaNode.dataset.finalPosition || "risky";
+    const effect = formulaNode.dataset.finalEffect || "standard";
+    
+    const charSelect = document.getElementById("planner-character");
+    const attrSelect = document.getElementById("planner-attribute");
+    const taskInput = document.getElementById("planner-task-context");
+    const chkExpend = document.getElementById("chk-planner-expend-capital");
+    
+    if (!charSelect || !attrSelect || !taskInput || !chkExpend) return;
+    
+    const charVal = charSelect.value;
+    const attrVal = attrSelect.value;
+    const taskContext = taskInput.value || "Strategic Operation";
+    const spendCapital = chkExpend.checked;
+    
+    // Simulate dice roll (2d6)
+    const dice1 = Math.floor(Math.random() * 6) + 1;
+    const dice2 = Math.floor(Math.random() * 6) + 1;
+    const baseSum = dice1 + dice2;
+    const totalSum = baseSum + totalModifier;
+    
+    // Roll animation
+    const diceFaces = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+    const diceDisplay = document.getElementById("planner-dice-display");
+    
+    if (!diceDisplay) return;
+    
+    let animCount = 0;
+    const interval = setInterval(() => {
+        const d1 = Math.floor(Math.random() * 6);
+        const d2 = Math.floor(Math.random() * 6);
+        diceDisplay.innerText = `${diceFaces[d1]} ${diceFaces[d2]}`;
+        animCount++;
+        if (animCount > 6) {
+            clearInterval(interval);
+            
+            diceDisplay.innerText = `${diceFaces[dice1 - 1]} ${diceFaces[dice2 - 1]} = ${totalSum}`;
+            
+            let resultTitle = "";
+            let resultDesc = "";
+            let resultColor = "";
+            let successType = "";
+            
+            if (totalSum >= 10) {
+                successType = "strong";
+                resultTitle = "Strong Success (10+)";
+                resultColor = "var(--comic-green)";
+                const progressUnit = effect === "great" ? 2 : 1;
+                resultDesc = `Clean execution! Progress active prototype/objective milestones by +${progressUnit} units. ${charVal.toUpperCase()} gains +1 Milestone Point in ${attrVal.toUpperCase()}!`;
+            } else if (totalSum >= 7) {
+                successType = "weak";
+                resultTitle = "Weak Success (7-9)";
+                resultColor = "var(--comic-amber)";
+                const tickCount = position === "controlled" ? 1 : (position === "risky" ? 2 : 3);
+                resultDesc = `Success with complications! The task succeeds, but tick ${tickCount} segments on an active project clock (or apply a structural flaw/burnout penalty).`;
+            } else {
+                successType = "miss";
+                resultTitle = "Operational Miss (6-)";
+                resultColor = "var(--comic-red)";
+                const tickCount = position === "controlled" ? 1 : (position === "risky" ? 2 : 3);
+                resultDesc = `Critical setback! Task fails completely. Tick ${tickCount} segments on a Project Clock. If a clock fills, catastrophe triggers!`;
+            }
+            
+            const outcomeArea = document.getElementById("planner-outcome-area");
+            const outcomeTitle = document.getElementById("planner-outcome-title");
+            const outcomeDesc = document.getElementById("planner-outcome-desc");
+            
+            if (outcomeArea && outcomeTitle && outcomeDesc) {
+                outcomeTitle.innerText = resultTitle;
+                outcomeTitle.style.color = resultColor;
+                outcomeDesc.innerText = resultDesc;
+                
+                outcomeArea.dataset.successType = successType;
+                outcomeArea.dataset.totalSum = totalSum;
+                outcomeArea.dataset.character = charVal;
+                outcomeArea.dataset.attribute = attrVal;
+                outcomeArea.dataset.position = position;
+                outcomeArea.dataset.effect = effect;
+                outcomeArea.dataset.taskContext = taskContext;
+                outcomeArea.dataset.spendCapital = spendCapital;
+                
+                outcomeArea.style.display = "block";
+            }
+            
+            window.triggerToast("🎲 DICE RESOLVED", `Total Roll: ${totalSum} (${resultTitle})`);
+        }
+    }, 80);
+};
+
+// 7. Interactive Roll Planner: Commit outcome state delta to campaign
+window.applyPlannerOutcome = function() {
+    const outcomeArea = document.getElementById("planner-outcome-area");
+    if (!outcomeArea) return;
+    
+    const successType = outcomeArea.dataset.successType;
+    const charVal = outcomeArea.dataset.character;
+    const attrVal = outcomeArea.dataset.attribute;
+    const totalSum = parseInt(outcomeArea.dataset.totalSum, 10);
+    const position = outcomeArea.dataset.position;
+    const effect = outcomeArea.dataset.effect;
+    const taskContext = outcomeArea.dataset.taskContext;
+    const spendCapital = outcomeArea.dataset.spendCapital === "true";
+    
+    if (!window.state) return;
+    
+    if (spendCapital) {
+        window.state.cash = Math.max(0, window.state.cash - 5000);
+    }
+    
+    let logMsg = `W${window.state.week}: `;
+    
+    let charsInvolved = [];
+    if (charVal.includes("_")) {
+        charsInvolved = charVal.split("_");
+    } else {
+        charsInvolved = [charVal];
+    }
+    
+    const charNames = {
+        lucius: "Lucius",
+        sarah: "Sarah",
+        leo: "Leo"
+    };
+    
+    const formatName = (key) => charNames[key] || key.toUpperCase();
+    
+    if (successType === "strong") {
+        logMsg += `${charsInvolved.map(formatName).join(" & ")} rolled Strong Success (${totalSum}) on "${taskContext}" (${attrVal.toUpperCase()}). `;
+        
+        for (const cKey of charsInvolved) {
+            const companion = window.state.personnel[cKey];
+            if (companion) {
+                if (!companion.progression) {
+                    companion.progression = { tech_milestones: 0, cha_milestones: 0, log_milestones: 0, per_milestones: 0 };
+                }
+                const milestoneKey = `${attrVal}_milestones`;
+                companion.progression[milestoneKey] = (companion.progression[milestoneKey] || 0) + 1;
+                
+                logMsg += `+1 ${attrVal.toUpperCase()} Milestone for ${formatName(cKey)}. `;
+                
+                if (companion.progression[milestoneKey] >= 3) {
+                    const currentStat = companion[attrVal] || 0;
+                    if (currentStat < 4) {
+                        companion[attrVal] = currentStat + 1;
+                        logMsg += `⭐ PERMANENT UPGRADE: ${formatName(cKey)} upgraded ${attrVal.toUpperCase()} to +${companion[attrVal]}! `;
+                    }
+                    companion.progression[milestoneKey] = 0;
+                }
+            }
+        }
+        
+        if (charVal === "sarah_leo" && window.state.personnel.synergy) {
+            const currentSyn = window.state.personnel.synergy.leo_and_sarah || 0;
+            if (currentSyn < 3) {
+                window.state.personnel.synergy.leo_and_sarah = currentSyn + 1;
+                logMsg += `Synergy increased to +${window.state.personnel.synergy.leo_and_sarah}. `;
+            }
+        }
+        
+    } else if (successType === "weak") {
+        logMsg += `${charsInvolved.map(formatName).join(" & ")} rolled Weak Success (${totalSum}) on "${taskContext}" (${attrVal.toUpperCase()}). `;
+        
+        const tickCount = position === "controlled" ? 1 : (position === "risky" ? 2 : 3);
+        
+        let clocked = false;
+        if (window.state.facility && window.state.facility.project_clocks && window.state.facility.project_clocks.length > 0) {
+            const activeClock = window.state.facility.project_clocks[0];
+            activeClock.filled = Math.min(activeClock.segments, activeClock.filled + tickCount);
+            logMsg += `Ticked clock "${activeClock.title}" by +${tickCount} segments. `;
+            clocked = true;
+            if (activeClock.filled === activeClock.segments) {
+                logMsg += `⚠️ CATASTROPHE: Clock "${activeClock.title}" is full! Penalty: ${activeClock.penalty}. `;
+            }
+        }
+        
+        if (!clocked) {
+            for (const cKey of charsInvolved) {
+                const comp = window.state.personnel[cKey];
+                if (comp && comp.morale !== undefined) {
+                    comp.morale = Math.max(0, comp.morale - 15);
+                    logMsg += `${formatName(cKey)} lost -15% Morale. `;
+                }
+            }
+            if (charVal === "sarah_leo" && window.state.personnel.synergy) {
+                const currentSyn = window.state.personnel.synergy.leo_and_sarah || 0;
+                window.state.personnel.synergy.leo_and_sarah = Math.max(-3, currentSyn - 1);
+                logMsg += `Synergy degraded by -1. `;
+            }
+        }
+        
+    } else {
+        logMsg += `${charsInvolved.map(formatName).join(" & ")} rolled Operational Miss (${totalSum}) on "${taskContext}" (${attrVal.toUpperCase()}). `;
+        
+        const tickCount = position === "controlled" ? 1 : (position === "risky" ? 2 : 3);
+        
+        let clocked = false;
+        if (window.state.facility && window.state.facility.project_clocks && window.state.facility.project_clocks.length > 0) {
+            const activeClock = window.state.facility.project_clocks[0];
+            activeClock.filled = Math.min(activeClock.segments, activeClock.filled + tickCount);
+            logMsg += `Ticked clock "${activeClock.title}" by +${tickCount} segments. `;
+            clocked = true;
+            if (activeClock.filled === activeClock.segments) {
+                logMsg += `⚠️ CATASTROPHE: Clock "${activeClock.title}" is full! Penalty: ${activeClock.penalty}. `;
+            }
+        }
+        
+        if (!clocked) {
+            window.state.cash = Math.max(0, window.state.cash - 15000);
+            logMsg += `Catastrophic damage: lost -$15,000 capital. `;
+            for (const cKey of charsInvolved) {
+                const comp = window.state.personnel[cKey];
+                if (comp && comp.morale !== undefined) {
+                    comp.morale = Math.max(0, comp.morale - 40);
+                    logMsg += `${formatName(cKey)} broke down (-40% Morale). `;
+                }
+            }
+        }
+    }
+    
+    if (!window.state.chronicle) window.state.chronicle = [];
+    window.state.chronicle.push(logMsg);
+    
+    outcomeArea.style.display = "none";
+    
+    const taskInput = document.getElementById("planner-task-context");
+    const chkExpend = document.getElementById("chk-planner-expend-capital");
+    const chkAssist = document.getElementById("chk-planner-synergy-assist");
+    
+    if (taskInput) taskInput.value = "";
+    if (chkExpend) chkExpend.checked = false;
+    if (chkAssist) chkAssist.checked = false;
+    
+    window.saveState();
+    window.renderStateToDashboard();
+    window.updateMergedPromptDisplay();
+    
+    window.triggerToast("💾 STATE COMMITTED", "Mechanical delta saved to campaign ledger.");
+};
+

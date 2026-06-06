@@ -44,6 +44,7 @@ function _mergeStateDelta(delta) {
         if (delta.facility.environmental_grid) window.state.facility.environmental_grid = delta.facility.environmental_grid;
         if (delta.facility.infrastructure_nodes) window.state.facility.infrastructure_nodes = delta.facility.infrastructure_nodes;
         if (delta.facility.structural_flaws) window.state.facility.structural_flaws = delta.facility.structural_flaws;
+        if (delta.facility.project_clocks) window.state.facility.project_clocks = delta.facility.project_clocks;
     }
     if (delta.inventory) {
         window.state.inventory = { ...(window.state.inventory || {}), ...delta.inventory };
